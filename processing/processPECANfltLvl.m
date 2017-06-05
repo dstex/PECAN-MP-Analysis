@@ -6,7 +6,7 @@
 
 clear all; close all;
 
-flight = '20150617';
+flight = '20150711';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -16,6 +16,15 @@ tempSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_tempSens');
 rhSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_rhSens');
 dewPtSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_dwptSens');
 altSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_altSens');
+spSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_spSens');
+dpSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_dpSens');
+wSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_wSens');
+wind_xSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_wind_xSens');
+wind_ySens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_wind_ySens');
+relWind_xSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_relWind_xSens');
+relWind_ySens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_relWind_ySens');
+wdSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_wdSens');
+wsSens = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_wsSens');
 FLstr = nc_attget([dataPath '/' flight '_PECANparams.nc'],-1,'FL_rawFile');
 
 if strcmp(flight,'20150706')	
@@ -33,6 +42,16 @@ end
 Torig = nc_varget(fltLvlFile,tempSens); %Ambient Temperature (C)
 TDorig = nc_varget(fltLvlFile,dewPtSens);
 Hum_Rel_orig = nc_varget(fltLvlFile,rhSens);
+staticP = nc_varget(fltLvlFile,spSens);
+dynamicP = nc_varget(fltLvlFile,dpSens);
+w_dpj = nc_varget(fltLvlFile,wSens);
+u = nc_varget(fltLvlFile,wind_xSens);
+v = nc_varget(fltLvlFile,wind_ySens);
+uRel = nc_varget(fltLvlFile,relWind_xSens);
+vRel = nc_varget(fltLvlFile,relWind_ySens);
+windD = nc_varget(fltLvlFile,wdSens);
+windS = nc_varget(fltLvlFile,wsSens);
+
 Alt = nc_varget(fltLvlFile,altSens);
 HH = nc_varget(fltLvlFile,'HH');
 MM = nc_varget(fltLvlFile,'MM');
@@ -41,6 +60,21 @@ lat = nc_varget(fltLvlFile,latSens);
 lon = nc_varget(fltLvlFile,lonSens);
 
 time_secs_FL = (HH*3600 + MM*60 + SS);
+
+
+mDate = datetime(flight,'InputFormat','yyyyMMdd');
+mDatePre = mDate - days(1);
+mDatePreStr = datestr(mDatePre,'yyyymmdd');
+fl_dt = cell(size(HH));
+for idt=1:length(HH)
+	if HH(idt) > 18
+		fl_dt{idt} = sprintf('%s%02d%02d%02d',mDatePreStr,HH(idt),MM(idt),SS(idt));
+	else
+		fl_dt{idt} = sprintf('%s%02d%02d%02d',flight,HH(idt),MM(idt),SS(idt));
+	end
+end
+fl_dt = str2double(fl_dt);
+
 
 TA = Torig;
 TD = TDorig;
@@ -120,6 +154,9 @@ timeStrct.Datatype = 'float';
 timeStrct.Attribute.Name = '_FillValue';
 timeStrct.Attribute.Value = NaN;
 
+dtStrct.Name = 'datetime_FL';
+dtStrct.Dimension = {'time_secs_FL'};
+
 latStrct.Name = 'lat';
 latStrct.Dimension = {'time_secs_FL'};
 latStrct.Datatype = 'float';
@@ -186,8 +223,63 @@ TDrStrct.Datatype = 'float';
 TDrStrct.Attribute.Name = '_FillValue';
 TDrStrct.Attribute.Value = NaN;
 
+statPStrct.Name = 'staticPres';
+statPStrct.Dimension = {'time_secs_FL'};
+statPStrct.Datatype = 'float';
+statPStrct.Attribute.Name = '_FillValue';
+statPStrct.Attribute.Value = NaN;
+
+dynmPStrct.Name = 'dynamicPres';
+dynmPStrct.Dimension = {'time_secs_FL'};
+dynmPStrct.Datatype = 'float';
+dynmPStrct.Attribute.Name = '_FillValue';
+dynmPStrct.Attribute.Value = NaN;
+
+wdpjStrct.Name = 'w_dpj';
+wdpjStrct.Dimension = {'time_secs_FL'};
+wdpjStrct.Datatype = 'float';
+wdpjStrct.Attribute.Name = '_FillValue';
+wdpjStrct.Attribute.Value = NaN;
+
+uStrct.Name = 'u';
+uStrct.Dimension = {'time_secs_FL'};
+uStrct.Datatype = 'float';
+uStrct.Attribute.Name = '_FillValue';
+uStrct.Attribute.Value = NaN;
+
+vStrct.Name = 'v';
+vStrct.Dimension = {'time_secs_FL'};
+vStrct.Datatype = 'float';
+vStrct.Attribute.Name = '_FillValue';
+vStrct.Attribute.Value = NaN;
+
+uRStrct.Name = 'u_relative';
+uRStrct.Dimension = {'time_secs_FL'};
+uRStrct.Datatype = 'float';
+uRStrct.Attribute.Name = '_FillValue';
+uRStrct.Attribute.Value = NaN;
+
+vRStrct.Name = 'v_relative';
+vRStrct.Dimension = {'time_secs_FL'};
+vRStrct.Datatype = 'float';
+vRStrct.Attribute.Name = '_FillValue';
+vRStrct.Attribute.Value = NaN;
+
+wdStrct.Name = 'windDir';
+wdStrct.Dimension = {'time_secs_FL'};
+wdStrct.Datatype = 'float';
+wdStrct.Attribute.Name = '_FillValue';
+wdStrct.Attribute.Value = NaN;
+
+wsStrct.Name = 'windSpd';
+wsStrct.Dimension = {'time_secs_FL'};
+wsStrct.Datatype = 'float';
+wsStrct.Attribute.Name = '_FillValue';
+wsStrct.Attribute.Value = NaN;
+
 % Add each variable to the file
 nc_addvar(ncFile,timeStrct);
+nc_addvar(ncFile,dtStrct);
 nc_addvar(ncFile,latStrct);
 nc_addvar(ncFile,lonStrct);
 nc_addvar(ncFile,altStrct);
@@ -199,48 +291,108 @@ nc_addvar(ncFile,RHhStrct);
 nc_addvar(ncFile,RHrStrct);
 nc_addvar(ncFile,TArStrct);
 nc_addvar(ncFile,TDrStrct);
+nc_addvar(ncFile,statPStrct);
+nc_addvar(ncFile,dynmPStrct);
+nc_addvar(ncFile,wdpjStrct);
+nc_addvar(ncFile,uStrct);
+nc_addvar(ncFile,vStrct);
+nc_addvar(ncFile,uRStrct);
+nc_addvar(ncFile,vRStrct);
+nc_addvar(ncFile,wdStrct);
+nc_addvar(ncFile,wsStrct);
 
 % Assign additional attributes to variables
 nc_attput(ncFile,nc_global,'Flight',flight);
 nc_attput(ncFile,nc_global,'ProcessDate',[datestr(datetime('now')) ' Central']);
 nc_attput(ncFile,nc_global,'Original HRD file',FLstr);
 nc_attput(ncFile,nc_global,'Original HRD file',FLstr);
+
 nc_attput(ncFile,'time_secs_FL','units','sec (UTC)');
 nc_attput(ncFile,'time_secs_FL','Description','Time in UTC seconds');
 nc_attput(ncFile,'time_secs_FL','RawVarName','(''HH''*3600 + ''MM''*60 + ''SS'')');
+
+nc_attput(ncFile,'datetime_FL','Description','Date/time string (YYYYMMDDHHMMSS)');
+
 nc_attput(ncFile,'lat','units','degrees');
 nc_attput(ncFile,'lat','Description','Latitude');
 nc_attput(ncFile,'lat','RawVarName',latSens);
+
 nc_attput(ncFile,'lon','units','degrees');
 nc_attput(ncFile,'lon','Description','Longitude');
 nc_attput(ncFile,'lon','RawVarName',lonSens);
+
 nc_attput(ncFile,'Alt','units','meters');
 nc_attput(ncFile,'Alt','Description','Meters above mean sea-level');
 nc_attput(ncFile,'Alt','RawVarName',altSens);
+
 nc_attput(ncFile,'TA','units','degrees C');
 nc_attput(ncFile,'TA','Description','Ambient temperature with sensor wetting correction');
 nc_attput(ncFile,'TA','RawVarName',tempSens);
+
 nc_attput(ncFile,'TD','units','degrees C');
 nc_attput(ncFile,'TD','Description','Dewpoint temperature with sensor wetting correction');
 nc_attput(ncFile,'TD','RawVarName',dewPtSens);
+
 nc_attput(ncFile,'RH_lw','units','%');
 nc_attput(ncFile,'RH_lw','Description','Relative humidity w.r.t. liquid water');
+
 nc_attput(ncFile,'RH_ice','units','%');
 nc_attput(ncFile,'RH_ice','Description','Relative humidity w.r.t. ice');
+
 nc_attput(ncFile,'RH_hybrid','units','%');
 nc_attput(ncFile,'RH_hybrid','Description','Relative humidity (RH_lw for T>0; RH_ice for T<=0)');
+
 nc_attput(ncFile,'RH_raw','units','%');
 nc_attput(ncFile,'RH_raw','Description','HRD calculated relative humidity');
 nc_attput(ncFile,'RH_raw','RawVarName',rhSens);
+
 nc_attput(ncFile,'TA_raw','units','degrees C');
 nc_attput(ncFile,'TA_raw','Description','HRD calculated ambient temperature');
 nc_attput(ncFile,'TA_raw','RawVarName',tempSens);
+
 nc_attput(ncFile,'TD_raw','units','degrees C');
 nc_attput(ncFile,'TD_raw','Description','HRD calculated dewpoint temperature');
 nc_attput(ncFile,'TD_raw','RawVarName',dewPtSens);
 
+nc_attput(ncFile,'staticPres','units','mb');
+nc_attput(ncFile,'staticPres','Description','Static Pressure');
+nc_attput(ncFile,'staticPres','RawVarName',spSens);
+
+nc_attput(ncFile,'dynamicPres','units','mb');
+nc_attput(ncFile,'dynamicPres','Description','Dynamic Pressure');
+nc_attput(ncFile,'dynamicPres','RawVarName',dpSens);
+
+nc_attput(ncFile,'w_dpj','units','m/s');
+nc_attput(ncFile,'w_dpj','Description','DPJ calculated vertical wind velocity');
+nc_attput(ncFile,'w_dpj','RawVarName',wSens);
+
+nc_attput(ncFile,'u','units','m/s');
+nc_attput(ncFile,'u','Description','x-component of total wind');
+nc_attput(ncFile,'u','RawVarName',wind_xSens);
+
+nc_attput(ncFile,'v','units','m/s');
+nc_attput(ncFile,'v','Description','y-component of total wind');
+nc_attput(ncFile,'v','RawVarName',wind_ySens);
+
+nc_attput(ncFile,'u_relative','units','m/s');
+nc_attput(ncFile,'u_relative','Description','x-component of relative wind');
+nc_attput(ncFile,'u_relative','RawVarName',relWind_xSens);
+
+nc_attput(ncFile,'v_relative','units','m/s');
+nc_attput(ncFile,'v_relative','Description','y-component of relative wind');
+nc_attput(ncFile,'v_relative','RawVarName',relWind_ySens);
+
+nc_attput(ncFile,'windDir','units','degrees');
+nc_attput(ncFile,'windDir','Description','Wind direction (from north)');
+nc_attput(ncFile,'windDir','RawVarName',wdSens);
+
+nc_attput(ncFile,'windSpd','units','m/s');
+nc_attput(ncFile,'windSpd','Description','Wind speed');
+nc_attput(ncFile,'windSpd','RawVarName',wsSens);
+
 % Write actual data to each variable
 nc_varput(ncFile,'time_secs_FL',time_secs_FL);
+nc_varput(ncFile,'datetime_FL',fl_dt);
 nc_varput(ncFile,'lat',lat);
 nc_varput(ncFile,'lon',lon);
 nc_varput(ncFile,'Alt',Alt);
@@ -252,14 +404,25 @@ nc_varput(ncFile,'RH_hybrid',RH_hybrid);
 nc_varput(ncFile,'RH_raw',Hum_Rel_orig);
 nc_varput(ncFile,'TA_raw',Torig);
 nc_varput(ncFile,'TD_raw',TDorig);
+nc_varput(ncFile,'staticPres',staticP);
+nc_varput(ncFile,'dynamicPres',dynamicP);
+nc_varput(ncFile,'w_dpj',w_dpj);
+nc_varput(ncFile,'u',u);
+nc_varput(ncFile,'v',v);
+nc_varput(ncFile,'u_relative',uRel);
+nc_varput(ncFile,'v_relative',vRel);
+nc_varput(ncFile,'windDir',windD);
+nc_varput(ncFile,'windSpd',windS);
 
 tmp1 = saveDir;
 tmp2 = flight;
 
 clearvars altStrct latStrct lonStrct timeStrct TAStrct TDStrct RHlStrct...
-	RHiStrct RHhStrct RHrStrct TArStrct TDrStrct dewPtSens altSens HH MM SS...
-	dewExcd newSatValue	a0w a1w a2w a3w a4w a5w a6w a0i a1i a2i a3i a4i a5i a6i...
-	fltLvlFile ix latSens lonSens ncFile rhSens dataPath FLstr saveDir flight...
-	tempSens svp_ice svp_lw vp_lw
+	RHiStrct RHhStrct RHrStrct TArStrct TDrStrct statPStrct dynmPStrct wdpjStrct...
+	uStrct vStrct uRStrct vRStrct wdStrct wsStrct dtStrct dewPtSens altSens rhSens spSens dpSens...
+	tempSens latSens lonSens wSens wind_xSens wind_ySens relWind_xSens relWind_ySens wdSens...
+	wsSens HH MM SS mDate mDatePre mDatePreStr dewExcd newSatValue	a0w a1w a2w a3w a4w a5w a6w...
+	a0i a1i a2i a3i a4i a5i a6i fltLvlFile ix idt ncFile dataPath FLstr saveDir flight svp_ice...
+	svp_lw vp_lw
 
 save([tmp1 tmp2 '_FltLvl_Processed.mat']);
