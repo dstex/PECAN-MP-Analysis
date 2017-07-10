@@ -1,11 +1,11 @@
 close all; clearvars;
 
-flight = '20150706';
-probe = 'CIP';
+flight = '20150709';
+probe = 'PIP';
 
 normalize = 1;
 
-timeStep = 10;
+timeStep = -999; % set to -999 to use whole spiral
 
 saveFigs = 1;
 noDisp = 1;
@@ -46,47 +46,84 @@ for ix = 1:length(startT)
 	timeSecs_sprl = timeSecs(sprlIx);
 	timehhmmss_sprl = timehhmmss(sprlIx);
 	
-	timeBeg = floor(timeSecs_sprl(1));
-	timeEnd = timeBeg + timeStep;
-	
-	while timeEnd <= timeSecs_sprl(end)
+	if timeStep == -999
+		disp(['Now plotting stats for ' num2str(timehhmmss_sprl(1)) '-' num2str(timehhmmss_sprl(end))]);
 
-		plotIx = find(timeSecs_sprl >= timeBeg & timeSecs_sprl < timeEnd);
-
-		if length(plotIx) >= 2
-			disp(['Now plotting stats for ' num2str(timehhmmss_sprl(plotIx(1))) '-' num2str(timehhmmss_sprl(plotIx(end)))]);
-
-			if saveFigs && noDisp
-				figure('visible','off','Position', [10,10,1200,800]);
-			else
-				figure('Position', [10,10,1200,800]);
-			end
-
-			if normalize
-				h = bar(edges,normc(sum(binStats_sprl(:,plotIx),2)),0.95,'FaceColor','b');
-				ylim([0,0.25])
-			else
-				h = bar(edges,sum(binStats_sprl(:,plotIx),2),0.95,'FaceColor','b');
-			end
-			xlabel('Diode Number','FontSize',24);
-			ylabel('Shadow Counts','FontSize',24);
-			ax = ancestor(h, 'axes');
-			yRule = ax.YAxis;
-			xRule = ax.XAxis;
-			title([flight ' - ' probe ' Diode Shadow Counts Spiral ' num2str(ix) ' - ' num2str(timehhmmss_sprl(plotIx(1))) '-' num2str(timehhmmss_sprl(plotIx(end)))],'FontSize',28);
-			set(gca,'XTick',1:64,'XTickLabelRotation',90);
-			yRule.FontSize = 24;
-
-
-			if saveFigs
-				set(gcf,'Units','Inches');
-				pos = get(gcf,'Position');
-				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/' probe '-DiodeShadows/' flight '_' probe '_diodeShadows_' num2str(timeStep) 's_S' num2str(ix) '_' num2str(timehhmmss_sprl(plotIx(end)))],ftype,'-r0')
-			end
+		if saveFigs && noDisp
+			figure('visible','off','Position', [10,10,1200,800]);
+		else
+			figure('Position', [10,10,1200,800]);
 		end
 
-		timeBeg = timeEnd;
+		if normalize
+			h = bar(edges,normc(sum(binStats_sprl,2)),0.95,'FaceColor','b');
+			ylim([0,0.25])
+		else
+			h = bar(edges,sum(binStats_sprl,2),0.95,'FaceColor','b');
+		end
+		
+		xlabel('Diode Number','FontSize',24);
+		ylabel('Shadow Counts','FontSize',24);
+		ax = ancestor(h, 'axes');
+		yRule = ax.YAxis;
+		xRule = ax.XAxis;
+		title([flight ' - ' probe ' Diode Shadow Counts Spiral ' num2str(ix) ' - ' num2str(timehhmmss_sprl(1)) '-' num2str(timehhmmss_sprl(end))],'FontSize',28);
+		set(gca,'XTick',1:64,'XTickLabelRotation',90);
+		yRule.FontSize = 24;
+
+
+		if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			print([saveDir '/' probe '-DiodeShadows/' flight '_' probe '_diodeShadows_S' num2str(ix)],ftype,'-r0')
+		end
+		
+	else
+		timeBeg = floor(timeSecs_sprl(1));
 		timeEnd = timeBeg + timeStep;
+		
+		while timeEnd <= timeSecs_sprl(end)
+			
+			plotIx = find(timeSecs_sprl >= timeBeg & timeSecs_sprl < timeEnd);
+			
+			if length(plotIx) >= 2
+				disp(['Now plotting stats for ' num2str(timehhmmss_sprl(plotIx(1))) '-' num2str(timehhmmss_sprl(plotIx(end)))]);
+				
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,800]);
+				else
+					figure('Position', [10,10,1200,800]);
+				end
+				
+				if normalize
+					h = bar(edges,normc(sum(binStats_sprl(:,plotIx),2)),0.95,'FaceColor','b');
+					ylim([0,0.25])
+				else
+					h = bar(edges,sum(binStats_sprl(:,plotIx),2),0.95,'FaceColor','b');
+				end
+				xlabel('Diode Number','FontSize',24);
+				ylabel('Shadow Counts','FontSize',24);
+				ax = ancestor(h, 'axes');
+				yRule = ax.YAxis;
+				xRule = ax.XAxis;
+				title([flight ' - ' probe ' Diode Shadow Counts Spiral ' num2str(ix) ' - ' num2str(timehhmmss_sprl(plotIx(1))) '-' num2str(timehhmmss_sprl(plotIx(end)))],'FontSize',28);
+				set(gca,'XTick',1:64,'XTickLabelRotation',90);
+				yRule.FontSize = 24;
+				
+				
+				if saveFigs
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print([saveDir '/' probe '-DiodeShadows/' flight '_' probe '_diodeShadows_' num2str(timeStep) 's_S' num2str(ix) '_' num2str(timehhmmss_sprl(plotIx(end)))],ftype,'-r0')
+				end
+			end
+			
+			timeBeg = timeEnd;
+			timeEnd = timeBeg + timeStep;
+		end
 	end
+	
+	
 end
