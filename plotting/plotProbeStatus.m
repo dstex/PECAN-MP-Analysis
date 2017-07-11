@@ -10,12 +10,13 @@ function plotProbeStatus
 	saveFigs = 1;
 	noDisp = 0;
 
-	plotDiodeVoltsCIP	= 1;
-	plotLaserCurrCIP	= 1;
-	plotDiodeVoltsPIP	= 1;
-	plotLaserCurrPIP	= 1;
+	plotDiodeVoltsCIP	= 0;
+	plotLaserCurrCIP	= 0;
+	plotDiodeVoltsPIP	= 0;
+	plotLaserCurrPIP	= 0;
+	plotPIPrjctCompare	= 1;
 	
-	addTemp = 1;
+	addTemp = 0;
 
 	if saveFigs
 		saveDir = [savePath flight];
@@ -27,19 +28,19 @@ function plotProbeStatus
 		end
 	end
 	
-	startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
-	endT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
-	PIP_acptStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptStartT');
-	PIP_acptEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptEndT');
-	PIP_rjctStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctStartT');
-	PIP_rjctEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctEndT');
+	startTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
+	endTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
+	PIP_acptStartTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptStartT');
+	PIP_acptEndTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptEndT');
+	PIP_rjctStartTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctStartT');
+	PIP_rjctEndTs = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctEndT');
 	
-	startT = startT/3600/24;
-	endT = endT/3600/24;
-	PIP_acptStartT = PIP_acptStartT/3600/24;
-	PIP_acptEndT = PIP_acptEndT/3600/24;
-	PIP_rjctStartT = PIP_rjctStartT/3600/24;
-	PIP_rjctEndT = PIP_rjctEndT/3600/24;
+	startT = startTs/3600/24;
+	endT = endTs/3600/24;
+	PIP_acptStartT = PIP_acptStartTs/3600/24;
+	PIP_acptEndT = PIP_acptEndTs/3600/24;
+	PIP_rjctStartT = PIP_rjctStartTs/3600/24;
+	PIP_rjctEndT = PIP_rjctEndTs/3600/24;
 	
 	if addTemp
 		fltLvlFile = ['/Users/danstechman/GoogleDrive/PECAN-Data/FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
@@ -92,6 +93,7 @@ function plotProbeStatus
 	%% Create array of different colors for spiral locators
 	colors = varycolor(length(startT));
 	colors = colors(randperm(length(startT)),:);
+	
 	
 	
 	%% CIP Plot creation
@@ -236,6 +238,13 @@ function plotProbeStatus
 	serialTimeP = TimeP/3600/24;
 
 
+	%% Define new version of PIP voltage(s) with only good spiral data included
+	Diode_1_VoltsP_Good = nan(size(Diode_1_VoltsP));
+	for ix=1:length(PIP_acptStartTs)
+		tmpGoodIx = find(TimeP >= PIP_acptStartTs(ix) & TimeP <= PIP_acptEndTs(ix));
+		Diode_1_VoltsP_Good(tmpGoodIx) = Diode_1_VoltsP(tmpGoodIx);
+	end
+	
 	%% PIP Plot creation
 
 	if plotDiodeVoltsPIP
@@ -371,7 +380,70 @@ function plotProbeStatus
 		end
 		
 	end
+	
+	if plotPIPrjctCompare
+		if saveFigs && noDisp
+			figure('visible','off','Position', [10,10,1200,800]);
+		else
+			figure('Position', [10,10,1200,800]);
+		end
+		
+		if addTemp
+			yyaxis left
+		end
+		h1 = plot(serialTimeP,Diode_1_VoltsP,'r');
+		hold on
+		h2 = plot(serialTimeP,Diode_1_VoltsP_Good,'b','LineWidth',3);
+		datetickzoom('x','HH:MM:SS');
+		set(gca,'XTickLabelRotation',45);
+		title([flight ' - PIP Diode 1 Voltages']);
+		xlabel('Time (UTC)');
+		ylabel('Diode Voltage (volts)');
+		grid
+		if addTemp
+			yyaxis right
+			plot(timeFLserial,TA,'g')
+			ylabel(sprintf('Temperature (%cC)',char(176)));
+			set(gca,'YDir','reverse');
+		end
+		
+		
+		for ix=1:length(startT)
+			if mod(ix,2) ~= 0
+				line([startT(ix) startT(ix)],get(gca,'YLim'),'Color',colors(ix,:),'Linewidth',3);
+				line([endT(ix) endT(ix)],get(gca,'YLim'),'Color',colors(ix,:),'Linewidth',3);
+			else
+				line([startT(ix) startT(ix)],get(gca,'YLim'),'Color',colors(ix,:),'Linewidth',3,'Linestyle','--');
+				line([endT(ix) endT(ix)],get(gca,'YLim'),'Color',colors(ix,:),'Linewidth',3,'Linestyle','--');
+			end
+		end
+		
+		
+		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		
+		legend([h1 h2],{'Diode\_1\_All','Diode\_1\_Good-Sprls'},'Fontsize',18);
+		
+		
+		dcm_obj = datacursormode(gcf);
+		set(dcm_obj,'UpdateFcn',{@myupdatefcn});
+		
+		if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			if addTemp
+				savefig([saveDir '/ProbeStatusPlots/' flight '_PIP_diode1Volts-Cmpr_temp.fig']);
+				print([saveDir '/ProbeStatusPlots/' flight '_PIP_diode1Volts-Cmpr_temp'],'-dpdf','-r0')
+			else
+				savefig([saveDir '/ProbeStatusPlots/' flight '_PIP_diode1Volts-Cmpr.fig']);
+				print([saveDir '/ProbeStatusPlots/' flight '_PIP_diode1Volts-Cmpr'],'-dpdf','-r0')
+			end
+		end
+		
+	end
 end
+
+
 
 % Used to modify datatip for PECAN probe status plots
 function txt = myupdatefcn(~,event_obj)
