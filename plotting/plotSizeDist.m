@@ -6,7 +6,7 @@
 
 close all;clearvars;
 
-flight = '20150709';
+flight = '20150706';
 
 probe = 'CIP';
 
@@ -15,8 +15,8 @@ outFileAppend = '';
 plotAvg = 0; % Plot averaged size distribution data (as defined in sDistFile)
 avgTime = 10; % Averaging time - used to determine which data file to pull in - only used if plotAvg is False
 
-saveFigs    = 0;
-noDisp      = 0;
+saveFigs    = 1;
+noDisp      = 1;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
 
@@ -29,8 +29,8 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 plotND				= 0;
 plotMD				= 0;
 
-plotNDtime			= 0;
-plotNDtemp			= 0;
+plotNDtime			= 1;
+plotNDtemp			= 1;
 
 plotNDtempBinned	= 0;
 
@@ -47,16 +47,17 @@ plotNtTempSprd		= 0;
 plotTWCtempSprd		= 0;
 plotDmmTempSprd		= 0;
 
-plotNtTempSprdF		= 1;
-plotTWCTempSprdF	= 1;
-plotDmmTempSprdF	= 1;
+plotNtTempSprdF		= 0;
+plotTWCTempSprdF	= 0;
+plotDmmTempSprdF	= 0;
 
 
 startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
 mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
 sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
 
-sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
+% sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
+sDistFile = [dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
 
 FLfile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
@@ -174,6 +175,77 @@ end
 tempRangeAll = [-18.5 22];
 
 switch flight
+	case '20150617'
+		if strcmp(probe,'CIP')
+			NDLim = [];
+			NDLogLim = [-4, 2];
+			MDLim = [3e-8 5e-6];
+			NtRangeAll = [1e-4 100];
+			TWCrangeAll = [2.5e-6 20];
+			DmmRangeAll = [-0.1 1.8];
+			NtRangeFill = [-4 2];
+			TWCRangeFill = [-4 0.5];
+		elseif strcmp(probe,'PIP')
+			NDLim = [];
+			NDLogLim = [-5, 1];
+			MDLim = [1e-10 1e-5];
+			NtRangeAll = [4.8e-5 10];
+			TWCrangeAll = [2.3e-6 1];
+			DmmRangeAll = [-0.1 6.5];
+			NtRangeFill = [];
+			TWCRangeFill = [];
+		end
+	case '20150620'
+		if strcmp(probe,'CIP')
+			NDLim = [];
+			NDLogLim = [-4, 2];
+			MDLim = [3e-8 5e-6];
+			NtRangeAll = [1e-4 100];
+			TWCrangeAll = [2.5e-6 20];
+			DmmRangeAll = [-0.1 1.8];
+			NtRangeFill = [-4 2];
+			TWCRangeFill = [-4 0.5];
+		elseif strcmp(probe,'PIP')
+			NDLim = [];
+			NDLogLim = [-5, 1];
+			MDLim = [1e-10 1e-5];
+			NtRangeAll = [4.8e-5 10];
+			TWCrangeAll = [2.3e-6 1];
+			DmmRangeAll = [-0.1 6.5];
+			NtRangeFill = [];
+			TWCRangeFill = [];
+		end
+	case '20150701'
+		if strcmp(probe,'CIP')
+			NDLim = [];
+			NDLogLim = [-4, 2];
+			MDLim = [3e-8 5e-6];
+			NtRangeAll = [1e-4 100];
+			TWCrangeAll = [2.5e-6 20];
+			DmmRangeAll = [-0.1 1.8];
+			NtRangeFill = [-4 2];
+			TWCRangeFill = [-4 0.5];
+		elseif strcmp(probe,'PIP')
+			NDLim = [];
+			NDLogLim = [-5, 1];
+			MDLim = [1e-10 1e-5];
+			NtRangeAll = [4.8e-5 10];
+			TWCrangeAll = [2.3e-6 1];
+			DmmRangeAll = [-0.1 6.5];
+			NtRangeFill = [];
+			TWCRangeFill = [];
+		end
+	case '20150702'
+		if strcmp(probe,'CIP')
+			NDLim = [];
+			NDLogLim = [-4, 2];
+			MDLim = [3e-8 5e-6];
+			NtRangeAll = [1e-4 100];
+			TWCrangeAll = [2.5e-6 20];
+			DmmRangeAll = [-0.1 1.8];
+			NtRangeFill = [-4 2];
+			TWCRangeFill = [-4 0.5];
+		end
 	case '20150706'
 		if strcmp(probe,'CIP')
 			NDLim = [1e-5 10];

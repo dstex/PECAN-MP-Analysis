@@ -28,6 +28,8 @@ if calcRej
 	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe 'wRejSD.cdf'];
 else
 	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.cdf'];
+% 	sDistFile = [dataPath 'mp-data/' flight '/origData/sDist/sdistCI.' flight '.' probe '.cdf'];
+% 	sDistFile = [dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.' probe '.cdf'];
 end
 flFile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
@@ -187,8 +189,8 @@ for ix=1:length(startT)
 	sprlLocs_FL = find(time_secsFL_all >= startT(ix) & time_secsFL_all <= endT(ix));
 	
 	if (length(sprlLocs) ~= length(sprlLocs_FL))
-		fprintf('Warning: Number of flight-level spiral locations does not equal number of sDist locations!');
-		break
+		fprintf('Warning: Number of flight-level spiral locations does not equal number of sDist locations! Skipping (Spiral #%d)\n',ix);
+		continue
 	end
 
 	spiralStr = ['sprl' num2str(ix)];
@@ -566,39 +568,5 @@ clearvars flFile FLstr hhFL i ii iii iiii ix iz jj leftover maxLength mmFL neatL
 	num_bins remain sDistFile spiralStr sprlLocs ssFL calcRej botIx startT endT importVars...
 	mlBotTime 
 	
-
 save([dataPath 'mp-data/' flight '/sDist/' 'sdistCI.' flight '.' probe '.' num2str(avgTime)	 'secAvg' outFileAppend '.mat']);
-
-%% Rough code for possibly handling two different averaging times
-%{
-liqAvg = 20; %sec
-iceAvg = 5;
-
-switchTime = [245, 678, 1034, 2345]; %sec
-
-
-for ix=1:length(startT)
-	timeLocsFL = find(time_secsFL >= startT(ix) & time_secsFL < endT(ix));
-	
-	tempC_sprl = tempC(timeLocsFL);
-	
-	if tempC_sprl(1) > tempC_sprl(end) % Spiral up - start liquid, end ice
-		
-		
-		
-	elseif tempC_sprl(1) < tempC_sprl(end) % Spiral down - start ice, end liquid
-		
-	end
-	
-	
-end
-
-maxLength = floor(max(size(cip2_conc_minR))/20)*20; %Round down to the nearest 5 or 20 array length, then deal with remainder later...
-
-i=1;
-for ix=1:10:length(time_new)-9
-% 	concNew2(i,:) = mean(concNew(ix:ix+9,:),1);
-	concNew3(i,:) = nansum(concNew(ix:ix+9,:),1)/10;
-	i=i+1;
-end
-%}
+% save([dataPath 'mp-data/' flight '/sDist_matchBins/' 'sdistCI.' flight '.' probe '.' num2str(avgTime)	 'secAvg' outFileAppend '.mat']);
