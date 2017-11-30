@@ -6,7 +6,7 @@
 
 close all;clearvars;
 
-flight = '20150706';
+flight = '20150617';
 
 probe = 'CIP';
 
@@ -16,9 +16,15 @@ plotAvg = 0; % Plot averaged size distribution data (as defined in sDistFile)
 avgTime = 10; % Averaging time - used to determine which data file to pull in - only used if plotAvg is False
 
 saveFigs    = 1;
-noDisp      = 1;
-Ftype		= '-dpdf';
-% Ftype		= '-dpng';
+noDisp      = 0;
+% Ftype		= '-dpdf';
+Ftype		= '-dpng';
+
+if strcmp(Ftype,'-dpdf')
+	Fres = '-painters'; % Use this for fully vectorized files
+else
+	Fres = '-r0'; % Use this for smaller files - saves figure with same resolution/size as displayed on screen
+end
 
 allSpirals = 1; % Plot every spiral for given flight - otherwise specified spirals given below are plotted
 showMarkers = 0; % Plot markers at given (below) locations on line plots
@@ -29,7 +35,7 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 plotND				= 0;
 plotMD				= 0;
 
-plotNDtime			= 1;
+plotNDtime			= 0;
 plotNDtemp			= 1;
 
 plotNDtempBinned	= 0;
@@ -55,9 +61,12 @@ plotDmmTempSprdF	= 0;
 startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
 mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
 sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
+mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
+mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
+mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
+mlBotTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTemp');
 
-% sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
-sDistFile = [dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
+sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.' num2str(avgTime) 'secAvg' outFileAppend '.mat'];
 
 FLfile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
@@ -68,8 +77,10 @@ sprlNames = fieldnames(time_secs_orig); % Variable used unimportant - just needs
 
 if ~allSpirals
 	switch flight
+		case '20150617'
+			loopVctr = [3,4];
 		case '20150706'
-			loopVctr = [2, 7]; % Spiral numbers to plot -- Updated 20160923 to reflect updated spiral definitions
+			loopVctr = [1,2]; % Spiral numbers to plot
 			if showMarkers
 				loopSDix = [28, 3]; %Index of 10 sec avg'd SD data where marker is desired
 			end
@@ -332,9 +343,9 @@ if plotND
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-ND_1s/' flight '_' probe '_ND_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND_1s/' flight '_' probe '_ND_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-ND_' num2str(avgTime) 's/' flight '_' probe '_ND_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND_' num2str(avgTime) 's/' flight '_' probe '_ND_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -394,9 +405,9 @@ if plotMD
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-MD_1s/' flight '_' probe '_MD_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-MD_1s/' flight '_' probe '_MD_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-MD_' num2str(avgTime) 's/' flight '_' probe '_MD_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-MD_' num2str(avgTime) 's/' flight '_' probe '_MD_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -443,16 +454,15 @@ if plotNDtime
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-ND-Time_1s/' flight '_' probe '_NDtime_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND-Time_1s/' flight '_' probe '_NDtime_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-ND-Time_' num2str(avgTime) 's/' flight '_' probe '_NDtime_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND-Time_' num2str(avgTime) 's/' flight '_' probe '_NDtime_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
 end
 
 if plotNDtemp
-	j = 1; %Used if showMarkers is true
     for ix = loopVctr
 		
 		if plotAvg
@@ -472,63 +482,109 @@ if plotNDtemp
         else
             figure('Position', [10,10,1500,1000]);
 		end
+		
+		set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
 
-		subplot(1,2,1)
+        yyaxis left
+		ax = gca;
         contourf(bin_mid,time_secs/24/3600,log10(conc_minR),NDLogLim(1):0.1:NDLogLim(2),'LineColor','none');
         xlabel('D [mm]');
-        colormap(jetmod); %Uses modified 'jet' colormap
+        ylabel('Time');
+		set(ax,'XMinorTick','on');
+		colormap(jetmod);
+        c=colorbar;
+		set(c,'Location','southoutside');
+		ylabel(c,'log_{10}N(D) [cm^{-4}]');
+		set(ax, 'CLim', NDLogLim);
 		
-		% Put colorbar on one plot of from the whole flight where it will not cover any data
-		% Putting colorbar inside of plot ensures the two plots remain properly sized relative
-		% to one another.
-		if ( (strcmp(flight,'20150706') && ix == 2) || (strcmp(flight,'20150709') && ix == 1) )
-			c=colorbar;
-			set(c,'Location','south');
-			ylabel(c,'log_{10}N(D) [cm^{-4}]');
-		end
-		
-		set(gca,'XMinorTick','on','YMinorTick','on');
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		plot([0 1.9], [1 1]*mlTopTime(ix)/24/3600,'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(0.1,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot([0 1.9], [1 1]*mlBotTime(ix)/24/3600,'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(0.1,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
+
+		% Swap time direction depending on spiral direction and define top/bottom spiral temps
 		if tempCsprl(1) < tempCsprl(end)
+			set(ax,'YDir','reverse');
+			topT = floor(tempCsprl(1));
+			botT = ceil(tempCsprl(end));
+		else
+			topT = floor(tempCsprl(end));
+			botT = ceil(tempCsprl(1));
+		end
+		
+		% Set the tick frequency for the time axis and adjust plot accordingly
+		delta = 60; % 1 minute
+		dtStrt = (floor(time_secs(1)/delta)*delta)/24/3600;
+		dtEnd = time_secs(end)/24/3600;
+		dtDelta = delta/24/3600; 
+		set(ax,'YTick',dtStrt:dtDelta:dtEnd);
+		datetick('y','HH:MM','keepticks','keeplimits');
+		
+		
+        yyaxis right
+		
+		dummyX = zeros(size(time_secs));
+		
+		if abs(topT-botT) >= 30
+			yTemp = botT:-4:topT;
+		else
+			yTemp = botT:-2:topT;
+		end
+		
+		index = NaN(size(yTemp));
+		yLbl = cell(size(yTemp));
+		for iT = 1:length(yTemp)
+			yLbl{iT} = num2str(yTemp(iT));
+			[tmpMin,index(iT)] = min(abs(tempCsprl-yTemp(iT)));
+			% fprintf('Deviation from desired %.1f: %.2f\n',yTemp(iT),tmpMin);
+			if (index(iT) == 1 ||  index(iT) == length(tempCsprl) || tmpMin > 0.3 )
+				index(iT) = NaN;
+			end
+		end
+		indexFinal = index(~isnan(index));
+		time_secs_s = time_secs/24/3600;
+		
+		if(tempCsprl(1) < tempCsprl(end))
+			
+			plot(dummyX,time_secs_s,'Color','w');
+			yLblFinal = flip(yLbl(~isnan(index)));
+			ax.YTick = flip(time_secs_s(indexFinal));
 			set(gca,'YDir','reverse');
+			ax.YTickLabel = yLblFinal;
+		else
+			plot(dummyX,time_secs_s,'Color','w');
+			yLblFinal = yLbl(~isnan(index));
+			ax.YTick = time_secs_s(indexFinal);
+			ax.YTickLabel = yLblFinal;
 		end
-		datetick('y','HH:MM:SS');
-        set(findall(gcf,'-property','FontSize'),'FontSize',26)
-        set(gca, 'CLim', NDLogLim);
 		
-		subplot(1,2,2)
-		plot(tempCsprl,time_fl/24/3600,'b-');
+		ylabel(sprintf('T (%cC)', char(176)));
 		
-		if (showMarkers && ~allSpirals)
-			hold on
-			plot(tempCsprl(loopSDix(j)),time_fl(loopSDix(j))/24/3600,'Marker','o','MarkerFaceColor','black',...
-			'MarkerEdgeColor','black','Markersize',10);
-			j = j+1;
-		end
 		
 		if ~plotAvg
 				title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
-			else
-				title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
-			end
-	
-		
-		xlabel('Temp (C)');
-		datetick('y','HH:MM:SS');
-		set(gca,'XMinorTick','on','YMinorTick','on');
-		if tempCsprl(1) < tempCsprl(end)
-			set(gca,'YDir','reverse');
+		else
+			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
 		end
-		set(findall(gcf,'-property','FontSize'),'FontSize',26)
+	
 
+		set(findall(gcf,'-property','FontSize'),'FontSize',26)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
 		
-        if saveFigs
+		if saveFigs
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-ND-Temp_1s/' flight '_' probe '_ND-Temp_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND-Temp_1s/' flight '_' probe '_ND-Temp_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-ND-Temp_' num2str(avgTime) 's/' flight '_' probe '_ND-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND-Temp_' num2str(avgTime) 's/' flight '_' probe '_ND-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
 		end
     end
@@ -586,7 +642,7 @@ if plotNDtempBinned
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/' probe '-ND-TempBinned/' flight '_' probe '_ND-Temp_S' num2str(ix) '_' num2str(iii) 'degC' outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-ND-TempBinned/' flight '_' probe '_ND-Temp_S' num2str(ix) '_' num2str(iii) 'degC' outFileAppend],Ftype,Fres)
 
 			end
 		end
@@ -649,9 +705,9 @@ if plotNtTemp
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -731,9 +787,9 @@ if plotNtTempAll
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_1s_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_1s_All' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -794,9 +850,9 @@ if plotTWCtemp
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -876,9 +932,9 @@ if plotTWCtempAll
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_1s_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_1s_All' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -939,9 +995,9 @@ if plotDmmTemp
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 			if ~plotAvg
-				print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_1s_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
-				print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,'-r0')
+				print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -1021,9 +1077,9 @@ if plotDmmTempAll
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_1s_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_1s_All' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' num2str(avgTime) 's_All' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -1121,9 +1177,9 @@ if plotNtTempSprd
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -1221,9 +1277,9 @@ if plotTWCtempSprd
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -1323,9 +1379,9 @@ if plotDmmTempSprd
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -1562,9 +1618,9 @@ if plotNtTempSprdF
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_1s/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's/' flight '_' probe '_Nt-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -1800,9 +1856,9 @@ if plotTWCTempSprdF
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_1s/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-TWC-Temp_' num2str(avgTime) 's/' flight '_' probe '_TWC-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
@@ -2040,9 +2096,9 @@ if plotDmmTempSprdF
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		if ~plotAvg
-			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_1s/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread-Fill_1s' outFileAppend],Ftype,Fres)
 		else
-			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,'-r0')
+			print([saveDir '/' probe '-Dmm-Temp_' num2str(avgTime) 's/' flight '_' probe '_Dmm-Temp_' cntrLine '-Spread-Fill_' num2str(avgTime) 's' outFileAppend],Ftype,Fres)
 		end
 	end
 end
