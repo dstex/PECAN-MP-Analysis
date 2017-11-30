@@ -3,16 +3,13 @@
 
 clearvars
 
-flight = '20150706';
+flight = '20150709';
 
 probe = 'CIP';
 
 avgTime = 10; % sec
 
 calcRej = 0;
-
-% Newer versions of the output netcdf files have a modified dimensions order - enable this to deal with that
-sdInPermute = 1;
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -28,125 +25,66 @@ if calcRej
 	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe 'wRejSD.cdf'];
 else
 	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.cdf'];
-% 	sDistFile = [dataPath 'mp-data/' flight '/origData/sDist/sdistCI.' flight '.' probe '.cdf'];
-% 	sDistFile = [dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.' probe '.cdf'];
 end
 flFile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
 
 %% Import all size distribution variables
-if sdInPermute
-	timehhmmss = nc_varget(sDistFile,'time');
+
+timehhmmss = nc_varget(sDistFile,'time');
+
+bin_min = nc_varget(sDistFile,'bin_min');
+bin_max = nc_varget(sDistFile,'bin_max');
+bin_mid = nc_varget(sDistFile,'bin_mid');
+bin_size = nc_varget(sDistFile,'bin_dD');
+
+conc_minR_all = (nc_varget(sDistFile,'conc_minR'))';
+area_all = permute(nc_varget(sDistFile,'area'),[3 2 1]);
+area_calcd_all = (nc_varget(sDistFile,'Calcd_area'))';
+conc_AreaR_all = (nc_varget(sDistFile,'conc_AreaR'))';
+n_all = nc_varget(sDistFile,'n');
+total_area_all = (nc_varget(sDistFile,'total_area'))';
+mass_ice_all = (nc_varget(sDistFile,'mass_ice'))';
+mass_lw_all = (nc_varget(sDistFile,'mass_lw'))';
+massBL_all = (nc_varget(sDistFile,'massBL'))';
+sd_habit_all = permute(nc_varget(sDistFile,'habitsd'),[3 2 1]);
+sdMass_habit_all = permute(nc_varget(sDistFile,'habitmsd'),[3 2 1]);
+efct_rad_all = nc_varget(sDistFile,'re');
+area_ratio_all = nc_varget(sDistFile,'ar');
+reject_ratio_all = nc_varget(sDistFile,'Reject_ratio');
+termVeloc_ice_all = (nc_varget(sDistFile,'vt_ice'))';
+termVeloc_lw_all = (nc_varget(sDistFile,'vt_lw'))';
+prec_rate_ice_all = (nc_varget(sDistFile,'Prec_rate_ice'))';
+prec_rate_lw_all = (nc_varget(sDistFile,'Prec_rate_lw'))';
+count_all = (nc_varget(sDistFile,'count'))';
+sampleVol_all = (nc_varget(sDistFile,'sample_vol'))';
+
+mean_aspectRatio_rect_all = (nc_varget(sDistFile,'mean_aspect_ratio_rectangle'))';
+mean_aspectRatio_elps_all = (nc_varget(sDistFile,'mean_aspect_ratio_ellipse'))';
+mean_areaRatio_all = (nc_varget(sDistFile,'mean_area_ratio'))';
+mean_perim_all = (nc_varget(sDistFile,'mean_perimeter'))';
+
+if calcRej
+	rej_conc_minR_all = (nc_varget(sDistFile,'REJ_conc_minR'))';
+	rej_area_all = permute(nc_varget(sDistFile,'REJ_area'),[3 2 1]);
+	rej_area_calcd_all = (nc_varget(sDistFile,'REJ_Calcd_area'))';
+	rej_conc_AreaR_all = (nc_varget(sDistFile,'REJ_conc_AreaR'))';
+	rej_n_all = nc_varget(sDistFile,'REJ_n');
+	rej_total_area_all = (nc_varget(sDistFile,'REJ_total_area'))';
+	rej_mass_all = (nc_varget(sDistFile,'REJ_mass'))';
+	rej_massBL_all = (nc_varget(sDistFile,'REJ_massBL'))';
+	rej_sd_habit_all = permute(nc_varget(sDistFile,'REJ_habitsd'),[3 2 1]);
+	rej_sdMass_habit_all = permute(nc_varget(sDistFile,'REJ_habitmsd'),[3 2 1]);
+	rej_efct_rad_all = nc_varget(sDistFile,'REJ_re');
+	rej_area_ratio_all = nc_varget(sDistFile,'REJ_ar');
+	rej_termVeloc_all = (nc_varget(sDistFile,'REJ_vt'))';
+	rej_prec_rate_all = (nc_varget(sDistFile,'REJ_Prec_rate'))';
+	rej_count_all = (nc_varget(sDistFile,'REJ_count'))';
 	
-	bin_min = nc_varget(sDistFile,'bin_min');
-	bin_max = nc_varget(sDistFile,'bin_max');
-	bin_mid = nc_varget(sDistFile,'bin_mid');
-	bin_size = nc_varget(sDistFile,'bin_dD');
-	
-	conc_minR_all = (nc_varget(sDistFile,'conc_minR'))';
-	area_all = permute(nc_varget(sDistFile,'area'),[3 2 1]);
-	area_calcd_all = (nc_varget(sDistFile,'Calcd_area'))';
-	conc_AreaR_all = (nc_varget(sDistFile,'conc_AreaR'))';
-	n_all = nc_varget(sDistFile,'n');
-	total_area_all = (nc_varget(sDistFile,'total_area'))';
-	mass_ice_all = (nc_varget(sDistFile,'mass_ice'))';
-	mass_lw_all = (nc_varget(sDistFile,'mass_lw'))';
-	massBL_all = (nc_varget(sDistFile,'massBL'))';
-	sd_habit_all = permute(nc_varget(sDistFile,'habitsd'),[3 2 1]);
-	sdMass_habit_all = permute(nc_varget(sDistFile,'habitmsd'),[3 2 1]);
-	efct_rad_all = nc_varget(sDistFile,'re');
-	area_ratio_all = nc_varget(sDistFile,'ar');
-	reject_ratio_all = nc_varget(sDistFile,'Reject_ratio');
-	termVeloc_ice_all = (nc_varget(sDistFile,'vt_ice'))';
-	termVeloc_lw_all = (nc_varget(sDistFile,'vt_lw'))';
-	prec_rate_ice_all = (nc_varget(sDistFile,'Prec_rate_ice'))';
-	prec_rate_lw_all = (nc_varget(sDistFile,'Prec_rate_lw'))';
-	count_all = (nc_varget(sDistFile,'count'))';
-	sampleVol_all = (nc_varget(sDistFile,'sample_vol'))';
-	
-	mean_aspectRatio_rect_all = (nc_varget(sDistFile,'mean_aspect_ratio_rectangle'))';
-	mean_aspectRatio_elps_all = (nc_varget(sDistFile,'mean_aspect_ratio_ellipse'))';
-	mean_areaRatio_all = (nc_varget(sDistFile,'mean_area_ratio'))';
-	mean_perim_all = (nc_varget(sDistFile,'mean_perimeter'))';
-	
-	if calcRej
-		rej_conc_minR_all = (nc_varget(sDistFile,'REJ_conc_minR'))';
-		rej_area_all = permute(nc_varget(sDistFile,'REJ_area'),[3 2 1]);
-		rej_area_calcd_all = (nc_varget(sDistFile,'REJ_Calcd_area'))';
-		rej_conc_AreaR_all = (nc_varget(sDistFile,'REJ_conc_AreaR'))';
-		rej_n_all = nc_varget(sDistFile,'REJ_n');
-		rej_total_area_all = (nc_varget(sDistFile,'REJ_total_area'))';
-		rej_mass_all = (nc_varget(sDistFile,'REJ_mass'))';
-		rej_massBL_all = (nc_varget(sDistFile,'REJ_massBL'))';
-		rej_sd_habit_all = permute(nc_varget(sDistFile,'REJ_habitsd'),[3 2 1]);
-		rej_sdMass_habit_all = permute(nc_varget(sDistFile,'REJ_habitmsd'),[3 2 1]);
-		rej_efct_rad_all = nc_varget(sDistFile,'REJ_re');
-		rej_area_ratio_all = nc_varget(sDistFile,'REJ_ar');
-		rej_termVeloc_all = (nc_varget(sDistFile,'REJ_vt'))';
-		rej_prec_rate_all = (nc_varget(sDistFile,'REJ_Prec_rate'))';
-		rej_count_all = (nc_varget(sDistFile,'REJ_count'))';
-		
-		rej_mean_aspectRatio_rect_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_rectangle'))';
-		rej_mean_aspectRatio_elps_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_ellipse'))';
-		rej_mean_areaRatio_all = (nc_varget(sDistFile,'REJ_mean_area_ratio'))';
-		rej_mean_perim_all = (nc_varget(sDistFile,'REJ_mean_perimeter'))';
-	end
-else
-	timehhmmss = nc_varget(sDistFile,'time');
-	
-	bin_min = nc_varget(sDistFile,'bin_min');
-	bin_max = nc_varget(sDistFile,'bin_max');
-	bin_mid = nc_varget(sDistFile,'bin_mid');
-	bin_size = nc_varget(sDistFile,'bin_dD');
-	
-	conc_minR_all = nc_varget(sDistFile,'conc_minR');
-	area_all = nc_varget(sDistFile,'area');
-	area_calcd_all = nc_varget(sDistFile,'Calcd_area');
-	conc_AreaR_all = nc_varget(sDistFile,'conc_AreaR');
-	n_all = nc_varget(sDistFile,'n');
-	total_area_all = nc_varget(sDistFile,'total_area');
-	mass_ice_all = nc_varget(sDistFile,'mass_ice');
-	mass_lw_all = nc_varget(sDistFile,'mass_lw');
-	massBL_all = nc_varget(sDistFile,'massBL');
-	sd_habit_all = nc_varget(sDistFile,'habitsd');
-	sdMass_habit_all = nc_varget(sDistFile,'habitmsd');
-	efct_rad_all = nc_varget(sDistFile,'re');
-	area_ratio_all = nc_varget(sDistFile,'ar');
-	reject_ratio_all = nc_varget(sDistFile,'Reject_ratio');
-	termVeloc_ice_all = nc_varget(sDistFile,'vt_ice');
-	termVeloc_lw_all = nc_varget(sDistFile,'vt_lw');
-	prec_rate_ice_all = nc_varget(sDistFile,'Prec_rate_ice');
-	prec_rate_lw_all = nc_varget(sDistFile,'Prec_rate_lw');
-	count_all = nc_varget(sDistFile,'count');
-	sampleVol_all = nc_varget(sDistFile,'sample_vol');
-	
-	mean_aspectRatio_rect_all = nc_varget(sDistFile,'mean_aspect_ratio_rectangle');
-	mean_aspectRatio_elps_all = nc_varget(sDistFile,'mean_aspect_ratio_ellipse');
-	mean_areaRatio_all = nc_varget(sDistFile,'mean_area_ratio');
-	mean_perim_all = nc_varget(sDistFile,'mean_perimeter');
-	
-	if calcRej
-		rej_conc_minR_all = nc_varget(sDistFile,'REJ_conc_minR');
-		rej_area_all = nc_varget(sDistFile,'REJ_area');
-		rej_area_calcd_all = nc_varget(sDistFile,'REJ_Calcd_area');
-		rej_conc_AreaR_all = nc_varget(sDistFile,'REJ_conc_AreaR');
-		rej_n_all = nc_varget(sDistFile,'REJ_n');
-		rej_total_area_all = nc_varget(sDistFile,'REJ_total_area');
-		rej_mass_all = nc_varget(sDistFile,'REJ_mass');
-		rej_massBL_all = nc_varget(sDistFile,'REJ_massBL');
-		rej_sd_habit_all = nc_varget(sDistFile,'REJ_habitsd');
-		rej_sdMass_habit_all = nc_varget(sDistFile,'REJ_habitmsd');
-		rej_efct_rad_all = nc_varget(sDistFile,'REJ_re');
-		rej_area_ratio_all = nc_varget(sDistFile,'REJ_ar');
-		rej_termVeloc_all = nc_varget(sDistFile,'REJ_vt');
-		rej_prec_rate_all = nc_varget(sDistFile,'REJ_Prec_rate');
-		rej_count_all = nc_varget(sDistFile,'REJ_count');
-		
-		rej_mean_aspectRatio_rect_all = nc_varget(sDistFile,'REJ_mean_aspect_ratio_rectangle');
-		rej_mean_aspectRatio_elps_all = nc_varget(sDistFile,'REJ_mean_aspect_ratio_ellipse');
-		rej_mean_areaRatio_all = nc_varget(sDistFile,'REJ_mean_area_ratio');
-		rej_mean_perim_all = nc_varget(sDistFile,'REJ_mean_perimeter');
-	end
+	rej_mean_aspectRatio_rect_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_rectangle'))';
+	rej_mean_aspectRatio_elps_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_ellipse'))';
+	rej_mean_areaRatio_all = (nc_varget(sDistFile,'REJ_mean_area_ratio'))';
+	rej_mean_perim_all = (nc_varget(sDistFile,'REJ_mean_perimeter'))';
 end
 
 time_secs_all = hhmmss2insec(timehhmmss);
