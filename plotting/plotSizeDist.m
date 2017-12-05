@@ -6,7 +6,7 @@
 
 close all;clearvars;
 
-flight = '20150617';
+flight = '20150620';
 
 probe = 'CIP';
 
@@ -16,7 +16,7 @@ plotAvg = 0; % Plot averaged size distribution data (as defined in sDistFile)
 avgTime = 10; % Averaging time - used to determine which data file to pull in - only used if plotAvg is False
 
 saveFigs    = 1;
-noDisp      = 0;
+noDisp      = 1;
 % Ftype		= '-dpdf';
 Ftype		= '-dpng';
 
@@ -36,9 +36,11 @@ plotND				= 0;
 plotMD				= 0;
 
 plotNDtime			= 0;
-plotNDtemp			= 1;
+plotMDtime			= 0;
+plotNDtemp			= 0;
+plotMDtemp			= 0;
 
-plotNDtempBinned	= 0;
+plotNDtempBinned	= 1;
 
 plotNtTemp			= 0;
 plotNtTempAll		= 0;
@@ -80,7 +82,7 @@ if ~allSpirals
 		case '20150617'
 			loopVctr = [3,4];
 		case '20150706'
-			loopVctr = [1,2]; % Spiral numbers to plot
+			loopVctr = [6,7]; % Spiral numbers to plot
 			if showMarkers
 				loopSDix = [28, 3]; %Index of 10 sec avg'd SD data where marker is desired
 			end
@@ -130,8 +132,14 @@ if saveFigs
 		if (plotNDtime && exist([saveDir '/' probe '-ND-Time_1s'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-Time_1s'])
 		end
+		if (plotMDtime && exist([saveDir '/' probe '-MD-Time_1s'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-Time_1s'])
+		end
 		if (plotNDtemp && exist([saveDir '/' probe '-ND-Temp_1s'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-Temp_1s'])
+		end
+		if (plotMDtemp && exist([saveDir '/' probe '-MD-Temp_1s'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-Temp_1s'])
 		end
 		if (plotNDtempBinned && exist([saveDir '/' probe '-ND-TempBinned'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-TempBinned'])
@@ -155,8 +163,14 @@ if saveFigs
 		if (plotNDtime && exist([saveDir '/' probe '-ND-Time_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-Time_' num2str(avgTime) 's'])
 		end
+		if (plotMDtime && exist([saveDir '/' probe '-MD-Time_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-Time_' num2str(avgTime) 's'])
+		end
 		if (plotNDtemp && exist([saveDir '/' probe '-ND-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-Temp_' num2str(avgTime) 's'])
+		end
+		if (plotMDtemp && exist([saveDir '/' probe '-MD-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-Temp_' num2str(avgTime) 's'])
 		end
 		if (plotNDtempBinned && exist([saveDir '/' probe '-ND-TempBinned'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-TempBinned'])
@@ -188,9 +202,11 @@ tempRangeAll = [-18.5 22];
 switch flight
 	case '20150617'
 		if strcmp(probe,'CIP')
-			NDLim = [];
+			NDLim = [1e-4 10];
+			NDtempBinLim = [5e-5 40];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [1e-8 8e-6];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -208,9 +224,11 @@ switch flight
 		end
 	case '20150620'
 		if strcmp(probe,'CIP')
-			NDLim = [];
+			NDLim = [1e-3 10];
+			NDtempBinLim = [5e-5 30];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [1e-7 8e-6];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -229,8 +247,10 @@ switch flight
 	case '20150701'
 		if strcmp(probe,'CIP')
 			NDLim = [];
+			NDtempBinLim = [9e-5 10];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -248,9 +268,11 @@ switch flight
 		end
 	case '20150702'
 		if strcmp(probe,'CIP')
-			NDLim = [];
+			NDLim = [3e-5 0.2];
+			NDtempBinLim = [5e-5 10];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [2e-9 5e-7];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -259,9 +281,11 @@ switch flight
 		end
 	case '20150706'
 		if strcmp(probe,'CIP')
-			NDLim = [1e-5 10];
+			NDLim = [3e-4 10];
+			NDtempBinLim = [4e-5 20];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [7e-8 4e-6];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -279,9 +303,11 @@ switch flight
 		end
 	case '20150709'
 		if strcmp(probe,'CIP')
-			NDLim = [4e-4 10];
+			NDLim = [4e-4 0.5];
+			NDtempBinLim = [6e-5 10];
 			NDLogLim = [-4, 2];
-			MDLim = [3e-8 5e-6];
+			MDLim = [4e-8 2e-6];
+			MDLogLim = [-8, -4];
 			NtRangeAll = [1e-4 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
@@ -315,7 +341,7 @@ if plotND
 		else
 			figure('Position', [10,10,1200,700]);
 		end
-		stairs(bin_min, nanmean(conc_minR,2), 'r', 'LineWidth', 2);
+		stairs(bin_min, nanmean(conc_minR,2), 'b', 'LineWidth', 2);
 		
 		if ~plotAvg
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
@@ -396,7 +422,7 @@ if plotMD
 		end
 		
 		yyaxis right
-		plot(bin_min,massCDF,'LineWidth',2);
+		plot(bin_min,massCDF*100,'LineWidth',2);
 		ylabel('Mass_{twc}(D) CDF [%]');
 		
 		
@@ -457,6 +483,54 @@ if plotNDtime
 				print([saveDir '/' probe '-ND-Time_1s/' flight '_' probe '_NDtime_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
 			else
 				print([saveDir '/' probe '-ND-Time_' num2str(avgTime) 's/' flight '_' probe '_NDtime_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
+			end
+        end
+    end
+end
+
+if plotMDtime
+    for ix = loopVctr
+		if plotAvg
+			mass_twc = mass_twc_avg.(sprlNames{ix});
+			time_secs = time_secs_avg.(sprlNames{ix});
+		else
+			mass_twc = mass_twc_orig.(sprlNames{ix});
+			time_secs = time_secs_orig.(sprlNames{ix});
+		end
+		
+        if saveFigs && noDisp
+            figure('visible','off','Position', [10,10,1920,700]);
+        else
+            figure('Position', [10,10,1920,700]);
+		end
+			
+		contourf(time_secs/24/3600,bin_mid,log10(mass_twc'),MDLogLim(1):0.1:MDLogLim(2),'LineColor','none');
+		
+		if ~plotAvg
+			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
+		else
+			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
+		end
+		
+		
+		ylabel('D [mm]');
+		datetick('x','HH:MM:SS');
+		set(gca,'XMinorTick','on','YMinorTick','on','XTickLabelRotation',45);
+		colormap(jetmod); %Uses modified 'jet' colormap
+		c=colorbar;
+		ylabel(c,'log_{10}Mass_{twc}(D) [g cm^{-4}]');
+		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(gca, 'CLim', MDLogLim);
+
+        
+        if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			if ~plotAvg
+				print([saveDir '/' probe '-MD-Time_1s/' flight '_' probe '_MDtime_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
+			else
+				print([saveDir '/' probe '-MD-Time_' num2str(avgTime) 's/' flight '_' probe '_MDtime_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
 			end
         end
     end
@@ -590,8 +664,137 @@ if plotNDtemp
     end
 end
 
-if plotNDtempBinned
+if plotMDtemp
+    for ix = loopVctr
+		
+		if plotAvg
+			mass_twc = mass_twc_avg.(sprlNames{ix});
+			time_secs = time_secs_avg.(sprlNames{ix});
+		else
+			mass_twc = mass_twc_orig.(sprlNames{ix});
+			time_secs = time_secs_orig.(sprlNames{ix});
+		end
+		
+		tempCsprl = tempC_orig.(sprlNames{ix});
+		time_fl = time_secsFL_orig.(sprlNames{ix});
+		
+
+        if saveFigs && noDisp
+            figure('visible','off','Position', [10,10,1500,1000]);
+        else
+            figure('Position', [10,10,1500,1000]);
+		end
+		
+		set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
+
+        yyaxis left
+		ax = gca;
+        contourf(bin_mid,time_secs/24/3600,log10(mass_twc),MDLogLim(1):0.1:MDLogLim(2),'LineColor','none');
+        xlabel('D [mm]');
+        ylabel('Time');
+		set(ax,'XMinorTick','on');
+		colormap(jetmod);
+        c=colorbar;
+		set(c,'Location','southoutside');
+		ylabel(c,'log_{10}Mass_{TWC}M(D) [g cm^{-4}]');
+		set(ax, 'CLim', MDLogLim);
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		plot([0 1.9], [1 1]*mlTopTime(ix)/24/3600,'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(0.1,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot([0 1.9], [1 1]*mlBotTime(ix)/24/3600,'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(0.1,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
+
+		% Swap time direction depending on spiral direction and define top/bottom spiral temps
+		if tempCsprl(1) < tempCsprl(end)
+			set(ax,'YDir','reverse');
+			topT = floor(tempCsprl(1));
+			botT = ceil(tempCsprl(end));
+		else
+			topT = floor(tempCsprl(end));
+			botT = ceil(tempCsprl(1));
+		end
+		
+		% Set the tick frequency for the time axis and adjust plot accordingly
+		delta = 60; % 1 minute
+		dtStrt = (floor(time_secs(1)/delta)*delta)/24/3600;
+		dtEnd = time_secs(end)/24/3600;
+		dtDelta = delta/24/3600; 
+		set(ax,'YTick',dtStrt:dtDelta:dtEnd);
+		datetick('y','HH:MM','keepticks','keeplimits');
+		
+		
+        yyaxis right
+		
+		dummyX = zeros(size(time_secs));
+		
+		if abs(topT-botT) >= 30
+			yTemp = botT:-4:topT;
+		else
+			yTemp = botT:-2:topT;
+		end
+		
+		index = NaN(size(yTemp));
+		yLbl = cell(size(yTemp));
+		for iT = 1:length(yTemp)
+			yLbl{iT} = num2str(yTemp(iT));
+			[tmpMin,index(iT)] = min(abs(tempCsprl-yTemp(iT)));
+			% fprintf('Deviation from desired %.1f: %.2f\n',yTemp(iT),tmpMin);
+			if (index(iT) == 1 ||  index(iT) == length(tempCsprl) || tmpMin > 0.3 )
+				index(iT) = NaN;
+			end
+		end
+		indexFinal = index(~isnan(index));
+		time_secs_s = time_secs/24/3600;
+		
+		if(tempCsprl(1) < tempCsprl(end))
+			
+			plot(dummyX,time_secs_s,'Color','w');
+			yLblFinal = flip(yLbl(~isnan(index)));
+			ax.YTick = flip(time_secs_s(indexFinal));
+			set(gca,'YDir','reverse');
+			ax.YTickLabel = yLblFinal;
+		else
+			plot(dummyX,time_secs_s,'Color','w');
+			yLblFinal = yLbl(~isnan(index));
+			ax.YTick = time_secs_s(indexFinal);
+			ax.YTickLabel = yLblFinal;
+		end
+		
+		ylabel(sprintf('T (%cC)', char(176)));
+		
+		
+		if ~plotAvg
+				title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
+		else
+			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
+		end
 	
+
+		set(findall(gcf,'-property','FontSize'),'FontSize',26)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
+		
+		if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			if ~plotAvg
+				print([saveDir '/' probe '-MD-Temp_1s/' flight '_' probe '_MD-Temp_1s_S' num2str(ix) outFileAppend],Ftype,Fres)
+			else
+				print([saveDir '/' probe '-MD-Temp_' num2str(avgTime) 's/' flight '_' probe '_MD-Temp_' num2str(avgTime) 's_S' num2str(ix) outFileAppend],Ftype,Fres)
+			end
+		end
+    end
+end
+
+if plotNDtempBinned
+% 	maxConc = [];
+% 	minConc = [];
 	for ix = loopVctr
 		
 		conc_minR_whole = conc_minR_orig.(sprlNames{ix});
@@ -619,10 +822,12 @@ if plotNDtempBinned
 				figure('Position', [10,10,1500,1000]);
 			end
 
+% 			tempMean = nanmean(conc_minR,2);
+% 			maxConc = [maxConc; nanmax(nanmax(tempMean(tempMean>0)))];
+% 			minConc = [minConc; nanmin(nanmin(tempMean(tempMean>0)))];
 			stairs(bin_min, nanmean(conc_minR,2), 'r', 'LineWidth', 2);
 
-
-			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(iii) ' deg C avg']);
+			title(sprintf('%s - Spiral %d - %s - %d%cC avg',flight,ix,probe,iii,char(176)));
 
 			xlabel('D [mm]');
 			ylabel('N(D) [cm^{-4}]');
@@ -630,8 +835,8 @@ if plotNDtempBinned
 			if ~isempty(diamLim)
 				xlim(diamLim);
 			end
-			if ~isempty(NDLim)
-				ylim(NDLim);	
+			if ~isempty(NDtempBinLim)
+				ylim(NDtempBinLim);	
 			end
 			set(gca,'XMinorTick','on','YMinorTick','on');
 			set(findall(gcf,'-property','FontSize'),'FontSize',28)
