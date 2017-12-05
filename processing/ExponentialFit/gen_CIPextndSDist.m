@@ -3,14 +3,14 @@ clearvars; close all;
 %% Specify various plotting/calculation parameters
 flight = '20150706';
 
-trimCipBeg	= 1;
+trimCipBeg	= 0;
 trimCipEnd	= 0;
 trimCipBoth	= 0;
 trimIncld = 5:28; % Encompasses diams. of 125-1000 um
  
 
-plotNDintvl = 1; % Plot N(D) for every time step
-plotND		= 0;
+plotNDintvl = 0; % Plot N(D) for every time step
+plotND		= 1;
 
 allSprls	= 1;
 
@@ -35,39 +35,23 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 %% Load in various PECAN parameters
 mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
 mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
-PIP_acptStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptStartT');
-PIP_acptEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_acptEndT');
-PIP_rjctStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctStartT');
-PIP_rjctEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctEndT');
-
 
 
 %% Load in CIP and PIP SD files and then extract only the variables we need from them
 cipSDall = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
-pipSDall = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.PIP.10secAvg.mat']);
 
 if use10secAvg
 	cip_concMinR = cipSDall.conc_minR_avg; %cm-4
-	pip_concMinR = pipSDall.conc_minR_avg;
 	cip_timeSecs = cipSDall.time_secs_avg;
-	pip_timeSecs = pipSDall.time_secs_avg;
 	cip_smplVol = cipSDall.sampleVol_avg; %cm3
-	pip_smplVol = pipSDall.sampleVol_avg;
 	cip_massTWC = cipSDall.mass_twc_avg; %g/cm4
-	pip_massTWC = pipSDall.mass_twc_avg;
 	cip_TWC = cipSDall.twc_avg; %g/m3
-	pip_TWC = pipSDall.twc_avg;
 else
 	cip_concMinR = cipSDall.conc_minR_orig;
-	pip_concMinR = pipSDall.conc_minR_orig;
 	cip_timeSecs = cipSDall.time_secs_orig;
-	pip_timeSecs = pipSDall.time_secs_orig;
 	cip_smplVol = cipSDall.sampleVol_orig;
-	pip_smplVol = pipSDall.sampleVol_orig;
 	cip_massTWC = cipSDall.mass_twc_orig;
-	pip_massTWC = pipSDall.mass_twc_orig;
 	cip_TWC = cipSDall.twc_orig;
-	pip_TWC = pipSDall.twc_orig;
 end
 
 % Set bins to be included in CIP variables
@@ -110,12 +94,6 @@ cip_binEdges = [cip_binMin; cip_binMax(end)];% cm
 cip_binEdgesAll = [cip_binMinAll; cip_binMaxAll(end)]; % Used when constructing extended cip bins
 cip_binwidth = (cipSDall.bin_size(cipIncld))/10; % cm
 
-pip_binMin = (pipSDall.bin_min)/10;
-pip_binMax = (pipSDall.bin_max)/10;
-pip_binMid = (pipSDall.bin_mid)/10;
-pip_binEdges = [pip_binMin; pip_binMax(end)];
-pip_binwidth = (pipSDall.bin_size)/10;
-
 sprlNames = fieldnames(cip_concMinR); % Variable used unimportant - just needs to be one of the structs
 
 
@@ -150,17 +128,14 @@ end
 %% Create array of extended CIP bins
 % Get increment between bin mids for CIP and then create an extended bin mids array
 % spanning from the beginning of the CIP bins to the end of the PIP bins
+pip_partialBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
+						4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0]/10000; %cm
 
-% cip_binDiff = diff(cip_binMid); % cm
-% cipExt_incrmnt = cip_binDiff(end); % cm
-% cipExt_binMidHalf = cip_binMid(end)+cipExt_incrmnt:cipExt_incrmnt:pip_binMid(end);
-% cipExt_binMid = [cip_binMid; cipExt_binMidHalf'];
-
-cipExt_binMid = [cip_binMidAll; pip_binMid(12:end)]; % cm
-cipExt_binEdges = [cip_binEdgesAll; pip_binEdges(13:end)];
+cipExt_binEdges = [cip_binEdgesAll; pip_partialBinEdges'];
 cipExt_binMin = cipExt_binEdges(1:end-1);
 cipExt_binMax = cipExt_binEdges(2:end);
-cipExt_binwidth = diff(cipExt_binEdges); % cm
+cipExt_binMid = (cipExt_binMin+cipExt_binMax)/2;
+cipExt_binwidth = diff(cipExt_binEdges); 
 numExt_bins = length(cipExt_binMid);
 
 %% Loop through each spiral we want to calculate
@@ -318,7 +293,7 @@ for ix = loopVctr
 	
 	% Plot N(D) averaged over whole spiral(s)
 	if plotND
-		cipConcExt = cipConc_ext_new.(sprlNames{ix});
+		cipConcExt = cipConc_ext.(sprlNames{ix});
 		cipObsFit = cipPSDobsFit.(sprlNames{ix});
 		
 		if saveFigs && noDisp
