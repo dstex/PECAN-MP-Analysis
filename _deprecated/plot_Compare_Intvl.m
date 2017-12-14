@@ -13,8 +13,8 @@ plotND		= 1;
 
 pipRjct		= 1;
 
-saveFigs	= 1;
-noDisp		= 1;
+saveFigs	= 0;
+noDisp		= 0;
 
 %% Make any directories that are needed
 if saveFigs
@@ -42,8 +42,8 @@ endT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
 PIP_rjctStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctStartT');
 PIP_rjctEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctEndT');
 
-cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
-pipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.PIP.10secAvg.mat']);
+cipDataF = load([dataPath 'mp-data/' flight '/sDist-match/sdistCI.' flight '.CIP.10secAvg.mat']);
+pipDataF = load([dataPath 'mp-data/' flight '/sDist-match/sdistCI.' flight '.PIP.10secAvg.mat']);
 SEAfile = [dataPath 'mp-data/' flight '/' flight '_SEA_TWC.txt'];
 
 loadSEAcsv; % Imports SEA data (SEA_Time, SEA_TWC)

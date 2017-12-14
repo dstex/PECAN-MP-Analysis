@@ -11,8 +11,8 @@ stairFit	= 0; % Plot fit using stairs? Line plot otherwise
 
 saveMat		= 0; % Save mat files for each spiral
 
-saveFigs	= 1;
-noDisp		= 1;
+saveFigs	= 0;
+noDisp		= 0;
 Ftype = '-dpdf';
 
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
@@ -75,7 +75,7 @@ end
 for ix = loopVctr
 	cipPSD = nanmean(cip_concMinR.(sprlNames{ix}),1);
 	
-	[cip_nml, cip_mObs, cip_mFit, cip_chisquare, cipPSD_fit, cip_fitFlag, cip_fitDetails] = f_one_mode(cipPSD, cip_binEdges', [0 2 3]);
+	[cip_nml, cip_mObs, cip_mFit, cip_chisquare, cipPSD_fit, cip_fitFlag, cip_fitDetails] = igfFit(cipPSD, cip_binEdges', [0 2 3]);
 	
 	if saveFigs && noDisp
 		figure('visible','off','Position', [10,10,1200,700]);

@@ -6,7 +6,7 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 
 plotMD		= 1;
-plotTWC		= 1;
+plotTWC		= 0;
 plotND		= 1;
 
 pipRjct		= 0;
@@ -40,8 +40,10 @@ endT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
 PIP_rjctStartT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctStartT');
 PIP_rjctEndT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'PIP_rjctEndT');
 
-cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
-pipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.PIP.10secAvg.mat']);
+% cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
+% pipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.PIP.10secAvg.mat']);
+cipDataF = load([dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.CIP.10secAvg.mat']);
+pipDataF = load([dataPath 'mp-data/' flight '/sDist_matchBins/sdistCI.' flight '.PIP.10secAvg.mat']);
 SEAfile = [dataPath 'mp-data/' flight '/' flight '_SEA_TWC.txt'];
 
 loadSEAcsv; % Imports SEA data (SEA_Time, SEA_TWC)

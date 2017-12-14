@@ -1,4 +1,4 @@
-function [nl, mobs, mfit, chisquare, psdfit, flag, output] = psd_expFit(psd, bin_div, moments)
+function [nl, mobs, mfit, chisquare, psdfit, flag, output] = expFit(psd, bin_div, moments)
 	% Exponential fitting routine.
 	% Adapted by Dan Stechman 12/20/2016 from IGF routine by Shichu (10/29/2016)
 	% Input:
