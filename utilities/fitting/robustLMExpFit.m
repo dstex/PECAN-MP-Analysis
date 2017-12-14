@@ -1,5 +1,5 @@
 %% cftool generated fitting algorithm 
-function [nl, obsPsdFit, fitresult, gof] = robustLMExpFit(binMid, obsPSD)
+function [nl, obsFit, fitresult, gof] = robustLMExpFit(binMid, obsPSD)
 	%CREATEFIT(CIP_BINMID,PSD3)
 	%  Create a fit.
 	%
@@ -31,14 +31,14 @@ function [nl, obsPsdFit, fitresult, gof] = robustLMExpFit(binMid, obsPSD)
 	
 	nl = coeffvalues(fitresult);
 	
-	obsPsdFit = f_myexp(nl,xData);
+	obsFit = f_myexp(nl,xData);
 	
 end
 
-function [ obsPsdFit ] = f_myexp( nl, x )
+function [ obsFit ] = f_myexp( nl, x )
 	% Calculate the continuous psd for the distribution
 	
-	obsPsdFit = nl(1).*exp(-nl(2).*x);
+	obsFit = nl(1).*exp(-nl(2).*x);
 	
 end
 	

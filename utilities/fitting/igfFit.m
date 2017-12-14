@@ -1,4 +1,4 @@
-function [nml, mobs, mfit, chisquare, psdfit, flag, output] = f_one_mode(psd, bin_div, moments)
+function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_div, moments)
 	% IGF fitting routine.
 	% Created by Shichu 10/29/2016
 	% Input:
