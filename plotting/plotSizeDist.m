@@ -6,7 +6,7 @@
 
 close all;clearvars;
 
-flight = '20150620';
+flight = '20150617';
 
 probe = 'CIP';
 
@@ -40,7 +40,8 @@ plotMDtime			= 0;
 plotNDtemp			= 0;
 plotMDtemp			= 0;
 
-plotNDtempBinned	= 1;
+plotNDtempBinned	= 0;
+plotMDtempBinned	= 1;
 
 plotNtTemp			= 0;
 plotNtTempAll		= 0;
@@ -144,6 +145,9 @@ if saveFigs
 		if (plotNDtempBinned && exist([saveDir '/' probe '-ND-TempBinned'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-TempBinned'])
 		end
+		if (plotMDtempBinned && exist([saveDir '/' probe '-MD-TempBinned'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-TempBinned'])
+		end
 		if ( (plotNtTemp || plotNtTempAll || plotNtTempSprd || plotNtTempSprdF) && exist([saveDir '/' probe '-Nt-Temp_1s'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-Nt-Temp_1s'])
 		end
@@ -175,6 +179,9 @@ if saveFigs
 		if (plotNDtempBinned && exist([saveDir '/' probe '-ND-TempBinned'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-ND-TempBinned'])
 		end
+		if (plotMDtempBinned && exist([saveDir '/' probe '-MD-TempBinned'], 'dir') ~= 7)
+			mkdir([saveDir '/' probe '-MD-TempBinned'])
+		end
 		if ( (plotNtTemp || plotNtTempAll || plotNtTempSprd || plotNtTempSprdF) && exist([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/' probe '-Nt-Temp_' num2str(avgTime) 's'])
 		end
@@ -204,10 +211,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [1e-4 10];
 			NDtempBinLim = [5e-5 40];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [1e-8 8e-6];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -226,10 +234,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [1e-3 10];
 			NDtempBinLim = [5e-5 30];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [1e-7 8e-6];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -248,10 +257,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [];
 			NDtempBinLim = [9e-5 10];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -270,10 +280,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [3e-5 0.2];
 			NDtempBinLim = [5e-5 10];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [2e-9 5e-7];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -283,10 +294,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [3e-4 10];
 			NDtempBinLim = [4e-5 20];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [7e-8 4e-6];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -305,10 +317,11 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [4e-4 0.5];
 			NDtempBinLim = [6e-5 10];
+			MDtempBinLim = [];
 			NDLogLim = [-4, 2];
 			MDLim = [4e-8 2e-6];
 			MDLogLim = [-8, -4];
-			NtRangeAll = [1e-4 100];
+			NtRangeAll = [4e-6 100];
 			TWCrangeAll = [2.5e-6 20];
 			DmmRangeAll = [-0.1 1.8];
 			NtRangeFill = [-4 2];
@@ -854,8 +867,77 @@ if plotNDtempBinned
 	end
 end
 
+if plotMDtempBinned
+	for ix = loopVctr
+		mass_twc_whole = mass_twc_orig.(sprlNames{ix});
+
+		time_secs_whole = time_secs_orig.(sprlNames{ix});
+		
+		tempCsprl_whole = tempC_orig.(sprlNames{ix});
+		
+		tempCsprl = ones(length(tempCsprl_whole),1)*NaN;
+		for ii=1:length(tempCsprl_whole)
+			if tempCsprl_whole(ii) < 0
+				tempCsprl(ii) = ceil(tempCsprl_whole(ii));
+			elseif tempCsprl_whole(ii) > 0
+				tempCsprl(ii) = floor(tempCsprl_whole(ii));
+			end
+		end
+		
+		for iii=min(tempCsprl):max(tempCsprl)
+			mass_twc = mass_twc_whole(tempCsprl == iii,:);
+			time_secs = time_secs_whole(tempCsprl == iii);
+			
+		
+			meanMass = nanmean(mass_twc,1);
+			
+			if saveFigs && noDisp
+				figure('visible','off','Position', [10,10,1500,1000]);
+			else
+				figure('Position', [10,10,1500,1000]);
+			end
+			
+			yyaxis left
+			stairs(bin_min, meanMass, 'b', 'LineWidth', 2);
+
+			title(sprintf('%s - Spiral %d - %s - %d%cC avg',flight,ix,probe,iii,char(176)));
+
+			xlabel('D [mm]');
+			ylabel('M_{twc}(D) [g cm^{-4}]');
+			set(gca,'Yscale','log');
+			if ~isempty(diamLim)
+				xlim(diamLim);
+			end
+			if ~isempty(MDtempBinLim)
+				ylim(MDtempBinLim);	
+			end
+			set(gca,'XMinorTick','on','YMinorTick','on');
+			set(findall(gcf,'-property','FontSize'),'FontSize',28)
+			grid
+			
+			massCDF = zeros(size(meanMass));
+			sumMeanMass = nansum(meanMass);
+			for ii=1:length(meanMass)
+				massCDF(ii) = nansum(meanMass(1:ii))/sumMeanMass;
+			end
+		
+			yyaxis right
+			plot(bin_min,massCDF*100,'LineWidth',2);
+			ylabel('Mass_{twc}(D) CDF [%]');
+
+
+			if saveFigs
+				set(gcf,'Units','Inches');
+				pos = get(gcf,'Position');
+				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+				print([saveDir '/' probe '-MD-TempBinned/' flight '_' probe '_MD-Temp_S' num2str(ix) '_' num2str(iii) 'degC' outFileAppend],Ftype,Fres)
+
+			end
+		end
+	end
+end
+
 if plotNtTemp
-	j = 1;
     for ix = loopVctr
 		
 		if plotAvg
@@ -877,23 +959,28 @@ if plotNtTemp
             figure('Position', [10,10,1500,1000]);
 		end
 
-		plot(NtSprl,tempCsprl,'b-');
-		
-		if (showMarkers && ~allSpirals)
-			hold on
-			plot(NtSprl(loopSDix(j)),tempCsprl(loopSDix(j)),'Marker','o','MarkerFaceColor','black',...
-			'MarkerEdgeColor','black','Markersize',10);
-			j = j+1;
-		end
-		
+				
 		if ~plotAvg
+			plot(NtSprl,tempCsprl,'b.','MarkerSize',10);
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
 		else
+			plot(NtSprl,tempCsprl,'b-');
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
 		end
+		
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		plot(NtRangeAll, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(50,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(NtRangeAll, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(50,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
 
 
-		ylabel('Temp (C)');
+		ylabel(sprintf('Temp (%cC)', char(176)));
 		xlabel('N_t [cm^{-3}]')
 		if ~isempty(tempRangeAll)
 			ylim(tempRangeAll);
@@ -903,6 +990,8 @@ if plotNtTemp
 		end
 		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse','Xscale','log');
 		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
 		grid;
 		
         if saveFigs
@@ -918,8 +1007,8 @@ if plotNtTemp
     end
 end
 
-if plotNtTempAll
-	
+if plotNtTempAll && length(sprlNames) > 1
+		
 	colors = varycolor(length(sprlNames));
 	
 	if plotAvg
@@ -940,15 +1029,17 @@ if plotNtTempAll
 		figure('Position', [10,10,1500,1000]);
 	end
 
-	plot(Nt,tempCsprl,'Color',colors(1,:));
+	
 	if ~plotAvg
+		plot(Nt,tempCsprl,'.','Color',colors(1,:),'MarkerSize',10);
 		title([flight ' - All Spirals - ' probe ' - 1s Avg']);
 	else
+		plot(Nt,tempCsprl,'Color',colors(1,:));
 		title([flight ' - All Spirals - ' probe ' - ' num2str(avgTime) 's Avg']);
 	end
 
 
-	ylabel('Temp (C)');
+	ylabel(sprintf('Temp (%cC)', char(176)));
 	xlabel('N_t [cm^{-3}]')
 	if ~isempty(tempRangeAll)
 		ylim(tempRangeAll);
@@ -967,20 +1058,28 @@ if plotNtTempAll
 			time_secs = time_secs_avg.(sprlNames{ix});
 			time_fl = time_secsFL_avg.(sprlNames{ix});
 			tempCsprl = tempC_avg.(sprlNames{ix});
+			plot(Nt,tempCsprl,'Color',colors(ix,:));
 		else
 			Nt = n_orig.(sprlNames{ix})';
 			time_secs = time_secs_orig.(sprlNames{ix});
 			time_fl = time_secsFL_orig.(sprlNames{ix});
 			tempCsprl = tempC_orig.(sprlNames{ix});
+			plot(Nt,tempCsprl,'.','Color',colors(ix,:),'MarkerSize',10);
 		end
 
-		plot(Nt,tempCsprl,'Color',colors(ix,:));
+		
 	end
 	
 	grid;
 	
 	% Create legends depending on which flight it is
-	if strcmp(flight,'20150706')
+	if strcmp(flight,'20150617')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150620')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150702')
+		legend('S1','S2','S3','Location','eastoutside');
+	elseif strcmp(flight,'20150706')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','Location','eastoutside');
 	elseif strcmp(flight,'20150709')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10',...
@@ -1000,7 +1099,6 @@ if plotNtTempAll
 end
 
 if plotTWCtemp
-	j = 1;
     for ix = loopVctr
 		
 		if plotAvg
@@ -1022,23 +1120,28 @@ if plotTWCtemp
             figure('Position', [10,10,1500,1000]);
 		end
 
-		plot(twc,tempCsprl,'b-');
 		
-		if (showMarkers && ~allSpirals)
-			hold on
-			plot(twc(loopSDix(j)),tempCsprl(loopSDix(j)),'Marker','o','MarkerFaceColor','black',...
-			'MarkerEdgeColor','black','Markersize',10);
-			j = j+1;
-		end
 		
 		if ~plotAvg
+			plot(twc,tempCsprl,'b.','MarkerSize',10);
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
 		else
+			plot(twc,tempCsprl,'b-');
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - ' num2str(avgTime) 's Avg']);
 		end
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		plot(TWCrangeAll, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(7,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(TWCrangeAll, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(7,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
 
 
-		ylabel('Temp (C)');
+		ylabel(sprintf('Temp (%cC)', char(176)));
 		xlabel('TWC [g m^{-3}]')
 		if ~isempty(tempRangeAll)
 			ylim(tempRangeAll);
@@ -1048,6 +1151,8 @@ if plotTWCtemp
 		end
 		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse','Xscale','log');
 		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
 		grid;
 		
         if saveFigs
@@ -1063,7 +1168,7 @@ if plotTWCtemp
     end
 end
 
-if plotTWCtempAll
+if plotTWCtempAll && length(sprlNames) > 1
 	
 	colors = varycolor(length(sprlNames));
 	
@@ -1085,15 +1190,17 @@ if plotTWCtempAll
 		figure('Position', [10,10,1500,1000]);
 	end
 
-	plot(twc,tempCsprl,'Color',colors(1,:));
+	
 	if ~plotAvg
+		plot(twc,tempCsprl,'.','Color',colors(1,:),'MarkerSize',10);
 		title([flight ' - All Spirals - ' probe ' - 1s Avg']);
 	else
+		plot(twc,tempCsprl,'Color',colors(1,:));
 		title([flight ' - All Spirals - ' probe ' - ' num2str(avgTime) 's Avg']);
 	end
 
 
-	ylabel('Temp (C)');
+	ylabel(sprintf('Temp (%cC)', char(176)));
 	xlabel('TWC [g m^{-3}]')
 	if ~isempty(tempRangeAll)
 		ylim(tempRangeAll);
@@ -1112,20 +1219,28 @@ if plotTWCtempAll
 			time_secs = time_secs_avg.(sprlNames{ix});
 			time_fl = time_secsFL_avg.(sprlNames{ix});
 			tempCsprl = tempC_avg.(sprlNames{ix});
+			plot(twc,tempCsprl,'Color',colors(ix,:));
 		else
 			twc = twc_orig.(sprlNames{ix});
 			time_secs = time_secs_orig.(sprlNames{ix});
 			time_fl = time_secsFL_orig.(sprlNames{ix});
 			tempCsprl = tempC_orig.(sprlNames{ix});
+			plot(twc,tempCsprl,'.','Color',colors(ix,:),'MarkerSize',10);
 		end
 
-		plot(twc,tempCsprl,'Color',colors(ix,:));
+		
 	end
 	
 	grid;
 	
 	% Create legends depending on which flight it is
-	if strcmp(flight,'20150706')
+	if strcmp(flight,'20150617')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150620')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150702')
+		legend('S1','S2','S3','Location','eastoutside');
+	elseif strcmp(flight,'20150706')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','Location','eastoutside');
 	elseif strcmp(flight,'20150709')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10',...
@@ -1145,7 +1260,6 @@ if plotTWCtempAll
 end
 
 if plotDmmTemp
-	j = 1;
     for ix = loopVctr
 		
 		if plotAvg
@@ -1169,12 +1283,15 @@ if plotDmmTemp
 
 		plot(Dmm,tempCsprl,'b-');
 		
-		if (showMarkers && ~allSpirals)
-			hold on
-			plot(Dmm(loopSDix(j)),tempCsprl(loopSDix(j)),'Marker','o','MarkerFaceColor','black',...
-			'MarkerEdgeColor','black','Markersize',10);
-			j = j+1;
-		end
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		plot(DmmRangeAll, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(0.1,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(DmmRangeAll, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(0.1,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
 		
 		if ~plotAvg
 			title([flight ' - Spiral ' num2str(ix) ' - ' probe ' - 1s Avg']);
@@ -1183,7 +1300,7 @@ if plotDmmTemp
 		end
 
 
-		ylabel('Temp (C)');
+		ylabel(sprintf('Temp (%cC)', char(176)));
 		xlabel('D_{mm} [mm]')
 		if ~isempty(tempRangeAll)
 			ylim(tempRangeAll);
@@ -1193,6 +1310,8 @@ if plotDmmTemp
 		end
 		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse');
 		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
 		grid;
 		
         if saveFigs
@@ -1208,7 +1327,7 @@ if plotDmmTemp
     end
 end
 
-if plotDmmTempAll
+if plotDmmTempAll && length(sprlNames) > 1
 	
 	colors = varycolor(length(sprlNames));
 	
@@ -1238,7 +1357,7 @@ if plotDmmTempAll
 	end
 
 
-	ylabel('Temp (C)');
+	ylabel(sprintf('Temp (%cC)', char(176)));
 	xlabel('D_{mm} [mm]')
 	if ~isempty(tempRangeAll)
 		ylim(tempRangeAll);
@@ -1268,7 +1387,13 @@ if plotDmmTempAll
 	end
 	
 	% Create legends depending on which flight it is
-	if strcmp(flight,'20150706')
+	if strcmp(flight,'20150617')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150620')
+		legend('S1','S2','S3','S4','S5','S6','S7','Location','eastoutside');
+	elseif strcmp(flight,'20150702')
+		legend('S1','S2','S3','Location','eastoutside');
+	elseif strcmp(flight,'20150706')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','Location','eastoutside');
 	elseif strcmp(flight,'20150709')
 		legend('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10',...
@@ -1316,7 +1441,10 @@ if plotNtTempSprd
 		allSprlTemp = vertcat(allSprlTemp, tempCsprl);
 	end
 
-	edgesTemp = (-15.125:.25:20.125);
+% 	edgesTemp = (-15.125:.25:20.125);
+% 	edgesTemp = (-19.125:.25:20.125);
+	edgesTemp = (-19.25:.5:20.25);
+% 	edgesTemp = (-19.5:1.0:20.5);
 	numBins = length(edgesTemp)-1;
 
 	bin_mid = (edgesTemp(1:end-1) + edgesTemp(2:end))/2;
@@ -1374,7 +1502,7 @@ if plotNtTempSprd
 		title([flight ' - Nt vs. Temp - ' cntrLine ' and Spread all Spirals - ' probe ' - ' num2str(avgTime) 's Avg']);
 	end
 	ylabel('N_t [cm^{-3}]')
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 
 	if saveFigs
@@ -1474,7 +1602,7 @@ if plotTWCtempSprd
 		title([flight ' - TWC vs. Temp - ' cntrLine ' and Spread all Spirals - ' probe ' - ' num2str(avgTime) 's Avg']);
 	end
 	ylabel('TWC [g m^{-3}]');
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 
 	if saveFigs
@@ -1576,7 +1704,7 @@ if plotDmmTempSprd
 		title([flight ' - Dmm vs. Temp - ' cntrLine ' and Spread all Spirals - ' probe ' - ' num2str(avgTime) 's Avg']);
 	end
 	ylabel('D_{mm} [mm]');
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 
 	if saveFigs
@@ -1811,7 +1939,7 @@ if plotNtTempSprdF
 		ylim(NtRangeFill)
 	end
 	ylabel('log_{10}(N_t) [cm^{-3}]')
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 	view([90 -90])
 	
@@ -2049,7 +2177,7 @@ if plotTWCTempSprdF
 		ylim(TWCRangeFill)
 	end
 	ylabel('log_{10}(TWC) [g m^{-3}]')
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 	view([90 -90])
 	
@@ -2289,7 +2417,7 @@ if plotDmmTempSprdF
 		ylim(DmmRangeAll)
 	end
 	ylabel('D_{mm} [mm]')
-	xlabel('Temperature (deg C)');
+	xlabel(sprintf('Temp (%cC)', char(176)));
 	set(findall(gcf,'-property','FontSize'),'FontSize',28);
 	view([90 -90])
 	
