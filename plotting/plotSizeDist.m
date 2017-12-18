@@ -211,7 +211,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [1e-4 10];
 			NDtempBinLim = [5e-5 40];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [1e-8 8e-6];
 			MDLogLim = [-8, -4];
@@ -234,7 +234,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [1e-3 10];
 			NDtempBinLim = [5e-5 30];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [1e-7 8e-6];
 			MDLogLim = [-8, -4];
@@ -257,7 +257,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [];
 			NDtempBinLim = [9e-5 10];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [];
 			MDLogLim = [-8, -4];
@@ -280,7 +280,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [3e-5 0.2];
 			NDtempBinLim = [5e-5 10];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [2e-9 5e-7];
 			MDLogLim = [-8, -4];
@@ -294,7 +294,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [3e-4 10];
 			NDtempBinLim = [4e-5 20];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [7e-8 4e-6];
 			MDLogLim = [-8, -4];
@@ -317,7 +317,7 @@ switch flight
 		if strcmp(probe,'CIP')
 			NDLim = [4e-4 0.5];
 			NDtempBinLim = [6e-5 10];
-			MDtempBinLim = [];
+			MDtempBinLim = [3.8e-10 3.8e-5];
 			NDLogLim = [-4, 2];
 			MDLim = [4e-8 2e-6];
 			MDLogLim = [-8, -4];
@@ -826,7 +826,7 @@ if plotNDtempBinned
 		
 		for iii=min(tempCsprl):max(tempCsprl)
 			conc_minR = conc_minR_whole(:,tempCsprl == iii);
-			time_secs = time_secs_whole(tempCsprl == iii);
+			% time_secs = time_secs_whole(tempCsprl == iii);
 			
 		
 			if saveFigs && noDisp
@@ -868,10 +868,10 @@ if plotNDtempBinned
 end
 
 if plotMDtempBinned
+	% maxMass = [];
+	% minMass = [];
 	for ix = loopVctr
 		mass_twc_whole = mass_twc_orig.(sprlNames{ix});
-
-		time_secs_whole = time_secs_orig.(sprlNames{ix});
 		
 		tempCsprl_whole = tempC_orig.(sprlNames{ix});
 		
@@ -896,6 +896,9 @@ if plotMDtempBinned
 			else
 				figure('Position', [10,10,1500,1000]);
 			end
+			
+			% maxMass = [maxMass; nanmax(nanmax(meanMass(meanMass>0)))];
+			% minMass = [minMass; nanmin(nanmin(meanMass(meanMass>0)))];
 			
 			yyaxis left
 			stairs(bin_min, meanMass, 'b', 'LineWidth', 2);
