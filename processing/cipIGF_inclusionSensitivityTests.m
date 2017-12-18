@@ -1,4 +1,4 @@
-% load 20150706_cipIGF_gte7-17-25-29.mat
+load /Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/20150706/CIP-Fitting/Sensitivity/20150706_cipIGF_gte7-17-25-29.mat
 close all;
 
 
@@ -50,10 +50,10 @@ for ix = 1:8
 	cipTWC_hybrid_29.(sprlNames{ix}) = nansum(cipMass_hybrid_29tmp,2)*1e6;
 	%}
 	
-% 	cipTWC_hybrid_total_7.(sprlNames{ix}) = nansum(cipTWC_hybrid_7.(sprlNames{ix}));
-% 	cipTWC_hybrid_total_17.(sprlNames{ix}) = nansum(cipTWC_hybrid_17.(sprlNames{ix}));
-% 	cipTWC_hybrid_total_25.(sprlNames{ix}) = nansum(cipTWC_hybrid_25.(sprlNames{ix}));
-% 	cipTWC_hybrid_total_29.(sprlNames{ix}) = nansum(cipTWC_hybrid_29.(sprlNames{ix}));
+	cipTWC_hybrid_total_7.(sprlNames{ix}) = nansum(cipTWC_hybrid_7.(sprlNames{ix}));
+	cipTWC_hybrid_total_17.(sprlNames{ix}) = nansum(cipTWC_hybrid_17.(sprlNames{ix}));
+	cipTWC_hybrid_total_25.(sprlNames{ix}) = nansum(cipTWC_hybrid_25.(sprlNames{ix}));
+	cipTWC_hybrid_total_29.(sprlNames{ix}) = nansum(cipTWC_hybrid_29.(sprlNames{ix}));
 	
 % 	fprintf('\nSpiral %d',ix)
 % 	fprintf('\n\tTWC_total_7 - TWC_total_17 = %.6f ',cipTWC_hybrid_total_7.(sprlNames{ix})-cipTWC_hybrid_total_17.(sprlNames{ix}))
@@ -62,12 +62,14 @@ for ix = 1:8
 	
 
 	figure('Position', [10,10,1200,700]);
-	plot(abs(cipTWC_hybrid_7.(sprlNames{ix})-cipTWC_hybrid_17.(sprlNames{ix})),'d','MarkerSize',15,'DisplayName','17TWC','LineWidth',2);
+	plot(cipTWC_hybrid_17.(sprlNames{ix})./cipTWC_hybrid_7.(sprlNames{ix}),'d','MarkerSize',15,'DisplayName','17TWC','LineWidth',2);
 	hold on
-	plot(abs(cipTWC_hybrid_7.(sprlNames{ix})-cipTWC_hybrid_25.(sprlNames{ix})),'s','MarkerSize',15,'DisplayName','25TWC','LineWidth',2);
-	plot(abs(cipTWC_hybrid_7.(sprlNames{ix})-cipTWC_hybrid_29.(sprlNames{ix})),'k.','MarkerSize',15,'DisplayName','29TWC','LineWidth',2);
+	plot(cipTWC_hybrid_25.(sprlNames{ix})./cipTWC_hybrid_7.(sprlNames{ix}),'s','MarkerSize',15,'DisplayName','25TWC','LineWidth',2);
+	plot(cipTWC_hybrid_29.(sprlNames{ix})./cipTWC_hybrid_7.(sprlNames{ix}),'k.','MarkerSize',15,'DisplayName','29TWC','LineWidth',2);
 	
-	
+	yl = ylim;
+	ylU = 1 + ((yl(2)-yl(1))/20);
+	ylim([yl(1) ylU])
 	
 	title({sprintf('20150706 - Spiral %d - CIP IGF-Extended TWC - Diff. in # req. PSD values',ix),...
 		sprintf('FSR-7=%.2f%%\tFSR-17=%.2f%%\tFSR-25=%.2f%%\tFSR-29=%.2f%%',fitSkipRatio_7.(sprlNames{ix})*100,...
@@ -76,10 +78,10 @@ for ix = 1:8
 		cipTWC_hybrid_total_7.(sprlNames{ix})-cipTWC_hybrid_total_25.(sprlNames{ix}),...
 		cipTWC_hybrid_total_7.(sprlNames{ix})-cipTWC_hybrid_total_29.(sprlNames{ix}))},'FontSize',20);
 	
-	lgnd = legend('show');
+	lgnd = legend('show','Location','best');
 	lgnd.FontSize = 18;
 	xlabel('Time Dimension');
-	ylabel('TWC Loss (relative to 7TWC) [g m^{-3}]');
+	ylabel('TWC\_n/TWC\_7');
 	grid on
 	set(gca,'YMinorGrid','on','YMinorTick','on');
 	
@@ -94,7 +96,7 @@ for ix = 1:8
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 		print([saveDir '/Sensitivity/20150706_FitSens-CIP_S' num2str(ix)],'-dpng','-r0')
-		save([saveDir '/Sensitivity/20150706_FitSens-CIP_S' num2str(ix) '.fig']);
+% 		save([saveDir '/Sensitivity/20150706_FitSens-CIP_S' num2str(ix) '.fig']);
 	end
 
 end
