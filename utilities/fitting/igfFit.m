@@ -1,4 +1,4 @@
-function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_div, moments)
+function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_div, moments, displayStat)
 	% IGF fitting routine.
 	% Created by Shichu 10/29/2016
 	% Input:
@@ -44,8 +44,13 @@ function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_di
 		mobs(szmoment) = sum( psd.*bin_diff.*bin_mid.^moments(szmoment) );
 	end
 	
-	option1 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter);
-	option2 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter, 'TolFun',TolFun, 'TolX',TolX);
+	if displayStat
+		option1 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter);
+		option2 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter, 'TolFun',TolFun, 'TolX',TolX);
+	else
+		option1 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter,'Display','off');
+		option2 = optimset('MaxFunEvals',MaxFunEvals, 'MaxIter',MaxIter, 'TolFun',TolFun, 'TolX',TolX,'Display','off');
+	end
 	
 	%%% upper/lower bounds of parameters nml
 	lb = [-Inf, -Inf, -Inf];
