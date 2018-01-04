@@ -6,20 +6,27 @@ clearvars; close all;
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
-flight = '20150709';
+flight = '20150702';
 
-saveFigs	= 0;
+saveFigs	= 1;
 noDisp		= 0;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
+
+if strcmp(Ftype,'-dpdf')
+	Fres = '-painters'; % Use this for fully vectorized files
+else
+	Fres = Fres; % Use this for smaller files - saves figure with same resolution/size as displayed on screen
+end
 
 allSpirals = 1; % Plot every spiral for given flight - otherwise specified spirals given below are plotted
 showMarkers = 0; % Plot markers at given (below) locations on line plots
 
 % One plot for each spiral
-plotTempRHAlt		= 0;
+plotTempRHAlt		= 1;
 plotRHTemp			= 0;
 plotTempAlt			= 0;
+plotTempTdAlt		= 0;
 plotTimeTemp		= 0;
 plotTimeAlt			= 0;
 plotTimeRH			= 0;
@@ -36,7 +43,7 @@ plotTempAltSprd		= 0;
 
 % Single plots similar to spread plots above, but with color-filled
 % spreads separated by MCS region
-plotRHTempSprdF		= 1;
+plotRHTempSprdF		= 0;
 
 % Timeseries of temperature over whole flight
 plotTempTS			= 0;
@@ -44,7 +51,7 @@ plotTempTS			= 0;
 % Range of plotted variables over subset/all flights/spirals
 % Useful if it is desired to directly compared plots
 tempRangeAll = [-18.5 22];
-RHrangeAll = [10 120];
+RHrangeAll = [0 120];
 altRangeAll = [1200 7500];
 
 %% Get flight-specific parameters
@@ -109,6 +116,9 @@ if saveFigs
 	if ( (plotTempAlt || plotAllTempAlt || plotTempAltSprd) && exist([saveDir '/Temp-Alt'], 'dir') ~= 7)
         mkdir([saveDir '/Temp-Alt'])
 	end
+	if ( plotTempTdAlt && exist([saveDir '/TempTd-Alt'], 'dir') ~= 7)
+        mkdir([saveDir '/TempTd-Alt'])
+	end
 	if (plotTempRHAlt && exist([saveDir '/Temp-RH-Alt'], 'dir') ~= 7)
         mkdir([saveDir '/Temp-RH-Alt'])
 	end
@@ -131,6 +141,7 @@ if plotTempRHAlt
 		TAtmp = TA(startFLix(ix):endFLix(ix));
 		AltTmp = Alt(startFLix(ix):endFLix(ix));
 		RHtmp = RH_hybrid(startFLix(ix):endFLix(ix));
+% 		RHtmp = Hum_Rel_orig(startFLix(ix):endFLix(ix));
 		
         [hAx,hTemp,hRH] = plotxx(TAtmp,AltTmp,RHtmp,AltTmp,...
             {'Temperature (deg C)','Relative Humidity (%)'},{'Altitude (m MSL)'});
@@ -164,7 +175,7 @@ if plotTempRHAlt
             set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/Temp-RH-Alt/' flight '_TempRHAlt_S' num2str(ix)],Ftype,'-r0')
+			print([saveDir '/Temp-RH-Alt/' flight '_TempRHAlt_S' num2str(ix)],Ftype,Fres)
 		end
 	end
 end
@@ -203,7 +214,7 @@ if plotRHTemp
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/RH-Temp/' flight '_RH-Temp_S' num2str(ix)],Ftype,'-r0')
+			print([saveDir '/RH-Temp/' flight '_RH-Temp_S' num2str(ix)],Ftype,Fres)
 		end
 
 	end
@@ -243,7 +254,50 @@ if plotTempAlt
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/Temp-Alt/' flight '_Temp-Alt_S' num2str(ix)],Ftype,'-r0')
+			print([saveDir '/Temp-Alt/' flight '_Temp-Alt_S' num2str(ix)],Ftype,Fres)
+		end
+
+	end
+end
+
+if plotTempTdAlt
+	j = 1;
+	for ix = loopVctr
+        if saveFigs && noDisp
+			figure('visible','off','Position', [10,10,1500,1500]);
+		else
+			figure('Position', [10,10,1500,1500]);
+		end
+		
+		TAtmp = TA(startFLix(ix):endFLix(ix));
+		TdTmp = TD(startFLix(ix):endFLix(ix));
+		AltTmp = Alt(startFLix(ix):endFLix(ix));
+		
+        plot(TAtmp,AltTmp,'r-');
+		hold on
+		plot(TdTmp,AltTmp,'b-x');
+		
+		if (showMarkers && ~allSpirals)
+			hold on;
+			plot(TAtmp(loopFLix(j)),AltTmp(loopFLix(j)),'Marker','o','MarkerFaceColor','black',...
+				'MarkerEdgeColor','black','Markersize',10);
+			j = j+1;
+		end
+		
+        set(gca,'XMinorTick','on','YMinorTick','on');
+        grid
+        title([flight ' - ' 'Spiral ' num2str(ix) ' - Temp & Td vs. Alt']);
+        xlabel('Temperature (deg C)');
+        ylabel('Altitude (m MSL)');
+%         xlim(tempRangeAll);
+		ylim(altRangeAll);
+        set(findall(gcf,'-property','FontSize'),'FontSize',28);
+        
+		if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			print([saveDir '/TempTd-Alt/' flight '_TempTd-Alt_S' num2str(ix)],Ftype,Fres)
 		end
 
 	end
@@ -283,7 +337,7 @@ if plotTimeTemp
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/RH-Temp/' flight '_RH-Temp_S' num2str(ix)],Ftype,'-r0')
+			print([saveDir '/RH-Temp/' flight '_RH-Temp_S' num2str(ix)],Ftype,Fres)
 		end
 
 	end
@@ -333,7 +387,7 @@ if plotAllRHTemp
 		set(gcf,'Units','Inches');
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-		print([saveDir '/RH-Temp/' flight '_RH-Temp_All'],Ftype,'-r0')
+		print([saveDir '/RH-Temp/' flight '_RH-Temp_All'],Ftype,Fres)
 	end
    
 end
@@ -386,7 +440,7 @@ if plotAllTempAlt
 		set(gcf,'Units','Inches');
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-		print([saveDir '/Temp-Alt/' flight '_Temp-Alt_All'],Ftype,'-r0')
+		print([saveDir '/Temp-Alt/' flight '_Temp-Alt_All'],Ftype,Fres)
 	end
 end
 
@@ -421,7 +475,7 @@ if plotTempTS
         set(gcf,'Units','Inches');
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-		print([saveDir '/' flight '_TempTimeSeries'],Ftype,'-r0')
+		print([saveDir '/' flight '_TempTimeSeries'],Ftype,Fres)
     end
 end
 
@@ -502,7 +556,7 @@ if plotRHTempSprd
 		set(gcf,'Units','Inches');
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-		print([saveDir '/RH-Temp/' flight '_RH-Temp_' cntrLine '-Spread'],Ftype,'-r0')
+		print([saveDir '/RH-Temp/' flight '_RH-Temp_' cntrLine '-Spread'],Ftype,Fres)
 	end
 end
 
@@ -584,7 +638,7 @@ if plotTempAltSprd
 		set(gcf,'Units','Inches');
 		pos = get(gcf,'Position');
 		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-		print([saveDir '/Temp-Alt/' flight '_Temp-Alt_' cntrLine '-Spread'],Ftype,'-r0')
+		print([saveDir '/Temp-Alt/' flight '_Temp-Alt_' cntrLine '-Spread'],Ftype,Fres)
 	end
 end
 
@@ -788,7 +842,7 @@ if plotRHTempSprdF
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/RH-Temp/' flight '_RH-Temp_' cntrLine '-Spread-Fill'],Ftype,'-r0')
+			print([saveDir '/RH-Temp/' flight '_RH-Temp_' cntrLine '-Spread-Fill'],Ftype,Fres)
 		end
 	end
 end
