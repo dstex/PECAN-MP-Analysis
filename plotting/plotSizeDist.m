@@ -6,17 +6,17 @@
 
 close all;clearvars;
 
-flight = '20150617';
+flight = '20150706';
 
 probe = 'CIP';
 
 outFileAppend = '';
 
-plotAvg = 0; % Plot averaged size distribution data (as defined in sDistFile)
+plotAvg = 1; % Plot averaged size distribution data (as defined in sDistFile)
 avgTime = 10; % Averaging time - used to determine which data file to pull in - only used if plotAvg is False
 
-saveFigs    = 1;
-noDisp      = 1;
+saveFigs    = 0;
+noDisp      = 0;
 % Ftype		= '-dpdf';
 Ftype		= '-dpng';
 
@@ -37,11 +37,11 @@ plotMD				= 0;
 
 plotNDtime			= 0;
 plotMDtime			= 0;
-plotNDtemp			= 0;
+plotNDtemp			= 1;
 plotMDtemp			= 0;
 
 plotNDtempBinned	= 0;
-plotMDtempBinned	= 1;
+plotMDtempBinned	= 0;
 
 plotNtTemp			= 0;
 plotNtTempAll		= 0;
@@ -62,7 +62,7 @@ plotDmmTempSprdF	= 0;
 
 
 startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
-mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
+% mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
 sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
 mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
 mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
@@ -103,9 +103,9 @@ tzSprls = find(sprlZone == 'T');
 esrSprls = find(sprlZone == 'S');
 raSprls = find(sprlZone == 'A');
 
-formSprls = find(mcsStg == 'F');
-matureSprls = find(mcsStg == 'M');
-weakSprls = find(mcsStg == 'W');
+% formSprls = find(mcsStg == 'F');
+% matureSprls = find(mcsStg == 'M');
+% weakSprls = find(mcsStg == 'W');
 
 %% Transpose select sDist variables
 for i=1:length(sprlNames)
@@ -615,7 +615,7 @@ if plotNDtemp
 		
         yyaxis right
 		
-		dummyX = zeros(size(time_secs));
+		dummyX = zeros(size(time_fl));
 		
 		if abs(topT-botT) >= 30
 			yTemp = botT:-4:topT;
@@ -634,19 +634,19 @@ if plotNDtemp
 			end
 		end
 		indexFinal = index(~isnan(index));
-		time_secs_s = time_secs/24/3600;
+		time_fl_s = time_fl/24/3600;
 		
 		if(tempCsprl(1) < tempCsprl(end))
 			
-			plot(dummyX,time_secs_s,'Color','w');
+			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = flip(yLbl(~isnan(index)));
-			ax.YTick = flip(time_secs_s(indexFinal));
+			ax.YTick = flip(time_fl_s(indexFinal));
 			set(gca,'YDir','reverse');
 			ax.YTickLabel = yLblFinal;
 		else
-			plot(dummyX,time_secs_s,'Color','w');
+			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = yLbl(~isnan(index));
-			ax.YTick = time_secs_s(indexFinal);
+			ax.YTick = time_fl_s(indexFinal);
 			ax.YTickLabel = yLblFinal;
 		end
 		
@@ -743,7 +743,7 @@ if plotMDtemp
 		
         yyaxis right
 		
-		dummyX = zeros(size(time_secs));
+		dummyX = zeros(size(time_fl));
 		
 		if abs(topT-botT) >= 30
 			yTemp = botT:-4:topT;
@@ -762,19 +762,19 @@ if plotMDtemp
 			end
 		end
 		indexFinal = index(~isnan(index));
-		time_secs_s = time_secs/24/3600;
+		time_fl_s = time_fl/24/3600;
 		
 		if(tempCsprl(1) < tempCsprl(end))
 			
-			plot(dummyX,time_secs_s,'Color','w');
+			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = flip(yLbl(~isnan(index)));
-			ax.YTick = flip(time_secs_s(indexFinal));
+			ax.YTick = flip(time_fl_s(indexFinal));
 			set(gca,'YDir','reverse');
 			ax.YTickLabel = yLblFinal;
 		else
-			plot(dummyX,time_secs_s,'Color','w');
+			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = yLbl(~isnan(index));
-			ax.YTick = time_secs_s(indexFinal);
+			ax.YTick = time_fl_s(indexFinal);
 			ax.YTickLabel = yLblFinal;
 		end
 		

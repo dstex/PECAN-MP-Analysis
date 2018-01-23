@@ -7,6 +7,8 @@ avgTime = 10;
 
 fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
 titleIdStr = '';
+% fNameAppnd = '';
+fNameAppnd = '_dLim6_raster';
 
 % Standard plots, but using hybrid (CIP obs + CIP extended) SDs
 plotND				= 0;
@@ -15,29 +17,33 @@ plotMD				= 0;
 plotNDall			= 0;
 plotMDall			= 0;
 
-plotNDtemp			= 0;
-plotMDtemp			= 0;
+plotNDtemp			= 1;
+plotMDtemp			= 1;
 
 plotTWCextndRatio	= 0;
+
+plotNtTemp			= 0;
+plotTWCtemp			= 0;
+plotDmmTemp			= 0;
 
 getLims = 0; % If true, run without plotting and print values to assist in setting axis limits
 plotNDtempBinned	= 0;
 plotMDtempBinned	= 0;
 
-% diamLim = [0.1 5];
-diamLim = [0.1 inf];
+diamLim = [0.1 6];
+% diamLim = [0.1 inf];
 
 
-saveFigs	= 0;
-noDisp		= 0;
+saveFigs	= 1;
+noDisp		= 1;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
 
-if strcmp(Ftype,'-dpdf')
-	Fres = '-painters'; % Use this for fully vectorized files
-else
+% if strcmp(Ftype,'-dpdf')
+% 	Fres = '-painters'; % Use this for fully vectorized files
+% else
 	Fres = '-r0'; % Use this for smaller files - saves figure with same resolution/size as displayed on screen
-end
+% end
 
 
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
@@ -81,12 +87,21 @@ if saveFigs
 	if (plotMDtempBinned && exist([saveDir '/CIP-MD-TempBinned'], 'dir') ~= 7)
 		mkdir([saveDir '/CIP-MD-TempBinned'])
 	end
+	if (plotNtTemp && exist([saveDir '/CIP-Nt-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
+		mkdir([saveDir '/CIP-Nt-Temp_' num2str(avgTime) 's'])
+	end
+	if (plotTWCtemp && exist([saveDir '/CIP-TWC-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
+		mkdir([saveDir '/CIP-TWC-Temp_' num2str(avgTime) 's'])
+	end
+	if (plotDmmTemp && exist([saveDir '/CIP-Dmm-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
+		mkdir([saveDir '/CIP-Dmm-Temp_' num2str(avgTime) 's'])
+	end
 end
 
 load([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat']);
 
-loopVctr = 1:length(sprlNames);
-% loopVctr = [4,7];
+% loopVctr = 1:length(sprlNames);
+loopVctr = [3];
 
 %% Specify flight-specific plotting parameters
 tempRangeAll = [-18.5 22];
@@ -108,12 +123,12 @@ switch flight
 		NDLim = [];
 		NDtempBinLim = [1e-10 20];
 		MDtempBinLim = [1e-10 2.5e-5];
-		NDLogLim = [-5 2];
+		NDLogLim = [-4 2];%[-5 2];
 		MDLim = [];
 		MDLogLim = [-10 -4];
-		NtRangeAll = [];
-		TWCrangeAll = [];
-		DmmRangeAll = [];
+		NtRangeAll = [4e-6 1];
+		TWCrangeAll = [9e-6 10];
+		DmmRangeAll = [0 3];
 		NtRangeFill = [];
 		TWCRangeFill = [];
 	case '20150701'
@@ -144,12 +159,12 @@ switch flight
 		NDLim = [1e-10 10];
 		NDtempBinLim = [1e-10 20];
 		MDtempBinLim = [1e-10 2.5e-5];
-		NDLogLim = [-5 2];
+		NDLogLim = [-4 2];%[-5 2];
 		MDLim = [1e-10 1e-4];
 		MDLogLim = [-10 -4];
-		NtRangeAll = [];
-		TWCrangeAll = [];
-		DmmRangeAll = [];
+		NtRangeAll = [4e-6 1];
+		TWCrangeAll = [9e-6 10];
+		DmmRangeAll = [0 3];
 		NtRangeFill = [];
 		TWCRangeFill = [];
 	case '20150709'
@@ -204,7 +219,7 @@ if plotND
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix)],Ftype,Fres)
+			print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
         end
     end
 end
@@ -259,7 +274,7 @@ if plotMD
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix)],Ftype,Fres)
+			print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
         end
     end
 end
@@ -304,7 +319,7 @@ if plotNDall
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix) '_all'],Ftype,Fres)
+			print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
         end
     end
 end
@@ -347,12 +362,15 @@ if plotMDall
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix) '_all'],Ftype,Fres)
+			print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
         end
     end
 end
 
 if plotNDtemp
+	if any(isinf(diamLim)) || isempty(diamLim)
+		diamLim = [min(cipExt_binMid*10) max(cipExt_binMid*10)];
+	end
     for ix = loopVctr
 		
 		cipConc = cipConc_hybrid_igf.(sprlNames{ix});
@@ -445,14 +463,17 @@ if plotNDtemp
 			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = flip(yLbl(~isnan(index)));
 			ax.YTick = flip(time_fl_s(indexFinal));
+			set(gca,'YLim',[time_fl_s(1) time_fl_s(end)]);
 			set(gca,'YDir','reverse');
 			ax.YTickLabel = yLblFinal;
 		else
 			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = yLbl(~isnan(index));
 			ax.YTick = time_fl_s(indexFinal);
+			set(gca,'YLim',[time_fl_s(1) time_fl_s(end)]);
 			ax.YTickLabel = yLblFinal;
 		end
+		
 		
 		ylabel(sprintf('T (%cC)', char(176)));
 		
@@ -466,12 +487,15 @@ if plotNDtemp
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-ND-Temp_' num2str(avgTime) 's/' flight '_CIP_ND-Temp_' num2str(avgTime) 's_S' num2str(ix)],Ftype,Fres)
+			print([saveDir '/CIP-ND-Temp_' num2str(avgTime) 's/' flight '_CIP_ND-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 		end
     end
 end
 
 if plotMDtemp
+	if any(isinf(diamLim)) || isempty(diamLim)
+		diamLim = [min(cipExt_binMid*10) max(cipExt_binMid*10)];
+	end
     for ix = loopVctr
 		
 		mass_twc = cipMass_hybrid_igf.(sprlNames{ix});
@@ -503,7 +527,7 @@ if plotMDtemp
 		colormap(jetmod);
         c=colorbar;
 		set(c,'Location','southoutside');
-		ylabel(c,'log_{10}Mass_{TWC}M(D) [g cm^{-4}]');
+		ylabel(c,'log_{10}M(D) [g cm^{-4}]');
 		set(ax, 'CLim', MDLogLim);
 		set(ax,'XLim',diamLim);
 		
@@ -564,12 +588,14 @@ if plotMDtemp
 			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = flip(yLbl(~isnan(index)));
 			ax.YTick = flip(time_fl_s(indexFinal));
+			set(gca,'YLim',[time_fl_s(1) time_fl_s(end)]);
 			set(gca,'YDir','reverse');
 			ax.YTickLabel = yLblFinal;
 		else
 			plot(dummyX,time_fl_s,'Color','w');
 			yLblFinal = yLbl(~isnan(index));
 			ax.YTick = time_fl_s(indexFinal);
+			set(gca,'YLim',[time_fl_s(1) time_fl_s(end)]);
 			ax.YTickLabel = yLblFinal;
 		end
 		
@@ -586,7 +612,7 @@ if plotMDtemp
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-MD-Temp_' num2str(avgTime) 's/' flight '_CIP_MD-Temp_' num2str(avgTime) 's_S' num2str(ix)],Ftype,Fres)
+			print([saveDir '/CIP-MD-Temp_' num2str(avgTime) 's/' flight '_CIP_MD-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 		end
     end
 end
@@ -636,7 +662,7 @@ if plotTWCextndRatio
 			set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
 			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-			print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-TWCextndRatio_' num2str(avgTime) 's_S' num2str(ix)],Ftype,Fres)
+			print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-TWCextndRatio_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 		end
 		
 		% Plot individual M(D) for all points with extended portion of TWC exceeding 50% of observed TWC
@@ -850,4 +876,180 @@ if plotMDtempBinned
 		fprintf('mean_minMass = %.2e\n',nanmean(minMass))
 		fprintf('maxMass = %.2g\n',nanmax(maxMass))
 	end
+end
+
+if plotNtTemp
+    for ix = loopVctr
+		
+		NtSprl = cipNt_hybrid_igf.(sprlNames{ix});
+		tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
+
+        if saveFigs && noDisp
+            figure('visible','off','Position', [10,10,1500,1000]);
+        else
+            figure('Position', [10,10,1500,1000]);
+		end
+
+
+		plot(NtSprl,tempCsprl,'wo','MarkerSize',8,'MarkerFaceColor','b');
+% 		plot(NtSprl,tempCsprl,'b-','LineWidth',2);
+		title([flight ' - Spiral ' num2str(ix) ' - CIP - ' num2str(avgTime) 's Avg']);
+
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		if isempty(NtRangeAll)
+			mrkLvlRng = [nanmin(NtSprl(NtSprl > 0))*0.98 nanmax(NtSprl(NtSprl > 0))*1.02];
+		else
+			mrkLvlRng = NtRangeAll;
+		end
+		txtLoc = (mrkLvlRng(2)-mrkLvlRng(1))*0.5;
+		plot(mrkLvlRng, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(txtLoc,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(mrkLvlRng, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(txtLoc,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
+
+
+		ylabel(sprintf('Temperature (%cC)', char(176)));
+		xlabel('N_t [cm^{-3}]')
+		if ~isempty(tempRangeAll)
+			ylim(tempRangeAll);
+		end
+		if ~isempty(NtRangeAll)
+			xlim(NtRangeAll);
+		end
+		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse','Xscale','log');
+		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
+		grid;
+		
+        if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			print([saveDir '/CIP-Nt-Temp_' num2str(avgTime) 's/' flight '_CIP_Nt-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+        end
+    end
+end
+
+if plotTWCtemp
+    for ix = loopVctr
+		
+		TWCsprl = cipTWC_hybrid_igf.(sprlNames{ix});
+		tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
+
+        if saveFigs && noDisp
+            figure('visible','off','Position', [10,10,1500,1000]);
+        else
+            figure('Position', [10,10,1500,1000]);
+		end
+
+
+		plot(TWCsprl,tempCsprl,'wo','MarkerSize',8,'MarkerFaceColor','b');
+% 		plot(TWCsprl,tempCsprl,'b-','LineWidth',2);
+		title([flight ' - Spiral ' num2str(ix) ' - CIP - ' num2str(avgTime) 's Avg']);
+
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		if isempty(TWCrangeAll)
+			mrkLvlRng = [nanmin(TWCsprl(TWCsprl > 0))*0.98 nanmax(TWCsprl(TWCsprl > 0))*1.02];
+		else
+			mrkLvlRng = TWCrangeAll;
+		end
+		txtLoc = (mrkLvlRng(2)-mrkLvlRng(1))*0.5;
+		plot(mrkLvlRng, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(txtLoc,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(mrkLvlRng, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(txtLoc,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
+
+
+		ylabel(sprintf('Temperature (%cC)', char(176)));
+		xlabel('TWC [g m^{-3}]')
+		if ~isempty(tempRangeAll)
+			ylim(tempRangeAll);
+		end
+		if ~isempty(TWCrangeAll)
+			xlim(TWCrangeAll);
+		end
+		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse','Xscale','log');
+		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
+		grid;
+		
+        if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			print([saveDir '/CIP-TWC-Temp_' num2str(avgTime) 's/' flight '_CIP_TWC-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+        end
+    end
+end
+
+if plotDmmTemp
+    for ix = loopVctr
+		
+		DmmSprl = cipDmm_hybrid_igf.(sprlNames{ix}).*10; % cm to mm
+		tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
+		
+		DmmSprl(DmmSprl == 0) = NaN;
+
+        if saveFigs && noDisp
+            figure('visible','off','Position', [10,10,1500,1000]);
+        else
+            figure('Position', [10,10,1500,1000]);
+		end
+
+
+		plot(DmmSprl,tempCsprl,'wo','MarkerSize',8,'MarkerFaceColor','b');
+% 		plot(DmmSprl,tempCsprl,'b-','LineWidth',2);
+		title([flight ' - Spiral ' num2str(ix) ' - CIP - ' num2str(avgTime) 's Avg']);
+
+		
+		% Plot ML top/bottom locations and annotate with temp
+		hold on
+		if isempty(DmmRangeAll)
+			mrkLvlRng = [nanmin(DmmSprl)*0.98 nanmax(DmmSprl)*1.02];
+		else
+			mrkLvlRng = DmmRangeAll;
+		end
+		txtLoc = mrkLvlRng(2)*0.9;
+		plot(mrkLvlRng, [1 1]*mlTopTemp(ix),'k--')
+		topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+		tMT = text(txtLoc,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		plot(mrkLvlRng, [1 1]*mlBotTemp(ix),'k--')
+		botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+		tMB = text(txtLoc,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		hold off
+
+
+		ylabel(sprintf('Temperature (%cC)', char(176)));
+		xlabel('Median Mass Diameter [mm]')
+		if ~isempty(tempRangeAll)
+			ylim(tempRangeAll);
+		end
+		if ~isempty(DmmRangeAll)
+			xlim(DmmRangeAll);
+		end
+		set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse');
+		set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		set(tMB,'FontSize',14);
+		set(tMT,'FontSize',14);
+		grid;
+		
+        if saveFigs
+			set(gcf,'Units','Inches');
+			pos = get(gcf,'Position');
+			set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+			print([saveDir '/CIP-Dmm-Temp_' num2str(avgTime) 's/' flight '_CIP_Dmm-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+        end
+    end
 end
