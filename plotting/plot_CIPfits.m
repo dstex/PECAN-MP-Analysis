@@ -1,14 +1,15 @@
 clearvars; close all;
 
 %% Specify various plotting/calculation parameters
-flight = '20150706';
+flight = '20150709';
 
 avgTime = 10;
 
-fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
+% fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
+fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_5cm'];
 titleIdStr = '';
-% fNameAppnd = '';
-fNameAppnd = '_dLim6_raster';
+fNameAppnd = '';
+% fNameAppnd = '_dLim6_raster';
 
 % Standard plots, but using hybrid (CIP obs + CIP extended) SDs
 plotND				= 0;
@@ -17,10 +18,11 @@ plotMD				= 0;
 plotNDall			= 0;
 plotMDall			= 0;
 
-plotNDtemp			= 1;
-plotMDtemp			= 1;
+plotNDtemp			= 0;
+plotMDtemp			= 0;
 
-plotTWCextndRatio	= 0;
+plotTWCextndRatio	= 1;
+plotMDratioExcd		= 1; % Plot indvdl M(D) for periods where mass ratio between obs and extended is exceeded
 
 plotNtTemp			= 0;
 plotTWCtemp			= 0;
@@ -100,8 +102,8 @@ end
 
 load([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat']);
 
-% loopVctr = 1:length(sprlNames);
-loopVctr = [3];
+loopVctr = 1:length(sprlNames);
+% loopVctr = [2];
 
 %% Specify flight-specific plotting parameters
 tempRangeAll = [-18.5 22];
@@ -665,45 +667,50 @@ if plotTWCextndRatio
 			print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-TWCextndRatio_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 		end
 		
+		if plotMDratioExcd
 		% Plot individual M(D) for all points with extended portion of TWC exceeding 50% of observed TWC
-% 		for irx = 1:length(ratioExcd)
-% 			if saveFigs && noDisp
-% 				figure('visible','off','Position', [10,10,1200,700]);
-% 			else
-% 				figure('Position', [10,10,1200,700]);
-% 			end
-% 			
-% 			tempMassObs = (cipMass(ratioExcd(irx),1:length(cip_binMin)).*cipExt_binwidth(1:length(cip_binMin))').*1e6; % Convert to g m-3
-% 			tempTWCObs = nansum(tempMassObs);
-% 			tempMassExt = (cipMass(ratioExcd(irx),length(cip_binMin)+1:end).*cipExt_binwidth(length(cip_binMin)+1:end)').*1e6; % Convert to g m-3
-% 			tempTWCExt = nansum(tempMassExt);
-% 			
-% 			
-% 			stairs(cipExt_binMin, cipMass(ratioExcd(irx),:)','LineWidth', 2);
-% 			
-% 			title({sprintf('%s - Spiral %d - CIP - SDs where TWC_{extnd} > 50%% of TWC_{obs} - #%d',flight,ix,ratioExcd(irx)),...
-% 				sprintf('TWC_{obs} = %.5f g m^{-3}     TWC_{extnd} = %.5f g m^{-3}',tempTWCObs,tempTWCExt)});
-% 			
-% 			xlabel('D [cm]');
-% 			ylabel('M_{twc}(D) [g cm^{-4}]');
-% 			set(gca,'Yscale','log','XScale','log');
-% 			if ~isempty(diamLim)
-% 				xlim(diamLim);
-% 			end
-% 			if ~isempty(MDLim)
-% 				ylim(MDLim);
-% 			end
-% 			set(gca,'XMinorTick','on','YMinorTick','on');
-% 			set(findall(gcf,'-property','FontSize'),'FontSize',28)
-% 			grid;
-% 			
-% 			if saveFigs
-% 				set(gcf,'Units','Inches');
-% 				pos = get(gcf,'Position');
-% 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-% 				print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-MD-TWCratioExcd_S' num2str(ix) '_' num2str(ratioExcd(irx)) '_5cm'],Ftype,Fres)
-% 			end
-% 		end
+			for irx = 1:length(ratioExcd)
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,700]);
+				else
+					figure('Position', [10,10,1200,700]);
+				end
+
+				tempMassObs = (cipMass(ratioExcd(irx),1:length(cip_binMin)).*cipExt_binwidth(1:length(cip_binMin))').*1e6; % Convert to g m-3
+				tempTWCObs = nansum(tempMassObs);
+				tempMassExt = (cipMass(ratioExcd(irx),length(cip_binMin)+1:end).*cipExt_binwidth(length(cip_binMin)+1:end)').*1e6; % Convert to g m-3
+				tempTWCExt = nansum(tempMassExt);
+
+
+% 				stairs(cipExt_binMin(1:length(cip_binMin)), cipMass(ratioExcd(irx),1:length(cip_binMin))','b-','LineWidth', 2);
+% 				hold on
+% 				stairs(cipExt_binMin(length(cip_binMin)+1:end), cipMass(ratioExcd(irx),length(cip_binMin)+1:end)','r-','LineWidth', 2);
+				stairs(cipExt_binMin(1:length(cip_binMin)), sDistF.mass_twc_avg.(sprlNames{ix})(ratioExcd(irx),:)','b-','LineWidth', 2);
+
+				title({sprintf('%s - Spiral %d - CIP - SDs where TWC_{extnd} > 50%% of TWC_{obs} - #%d',flight,ix,ratioExcd(irx)),...
+					sprintf('TWC_{obs} = %.5f g m^{-3}     TWC_{extnd} = %.5f g m^{-3}',tempTWCObs,tempTWCExt)});
+
+				xlabel('D [cm]');
+				ylabel('M_{twc}(D) [g cm^{-4}]');
+				set(gca,'Yscale','log','XScale','log');
+% 				if ~isempty(diamLim)
+% 					xlim(diamLim);
+% 				end
+				if ~isempty(MDLim)
+					ylim(MDLim);
+				end
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28)
+				grid;
+
+				if saveFigs
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-MD-TWCratioExcd_S' num2str(ix) '_' num2str(ratioExcd(irx)) '_5cm'],Ftype,Fres)
+				end
+			end
+		end
     end
 end
 
