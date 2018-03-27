@@ -4,7 +4,7 @@
 clearvars;
 
 
-flight = '20150709';
+flight = '20150617';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -25,6 +25,7 @@ mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
 mlBotTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTemp');
 mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
 sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
+mcsType = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsType');
 
 
 
@@ -50,9 +51,19 @@ ncRoot.Variables(1).Dimensions(1) = ncRoot.Dimensions(4);
 ncRoot.Variables(1).Attributes = zoneA;
 ncRoot.Variables(1).Datatype = 'char';
 
+mTypeA(1).Name = 'Units';
+mTypeA(1).Value = 'TSF=Trailing Stratiform (Formative),TSM=Trailing Stratiform (Mature),LS=Leading Stratiform,PS=Parallel Stratiform,C=Cluster MCS';
+mTypeA(2).Name = 'Description';
+mTypeA(2).Value = 'General MCS system type at time of each spiral';
+ncRoot.Variables(2).Name = 'mcsType';
+ncRoot.Variables(2).Dimensions(1) = ncRoot.Dimensions(4);
+ncRoot.Variables(2).Attributes = mTypeA;
+ncRoot.Variables(2).Datatype = 'char';
+
 ncwriteschema(outfile,ncRoot);
 
 ncwrite(outfile,'/sprlZone',sprlZone);
+ncwrite(outfile,'/mcsType',mcsType);
 
 sprlNames = fieldnames(time_secs_avg);
 
