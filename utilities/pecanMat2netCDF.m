@@ -4,7 +4,7 @@
 clearvars;
 
 
-flight = '20150617';
+flight = '20150709';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -52,7 +52,7 @@ ncRoot.Variables(1).Attributes = zoneA;
 ncRoot.Variables(1).Datatype = 'char';
 
 mTypeA(1).Name = 'Units';
-mTypeA(1).Value = 'TSF=Trailing Stratiform (Formative),TSM=Trailing Stratiform (Mature),LS=Leading Stratiform,PS=Parallel Stratiform,C=Cluster MCS';
+mTypeA(1).Value = 'F=Trailing Stratiform (Formative),M=Trailing Stratiform (Mature),L=Leading Stratiform,P=Parallel Stratiform,C=Cluster MCS';
 mTypeA(2).Name = 'Description';
 mTypeA(2).Value = 'General MCS system type at time of each spiral';
 ncRoot.Variables(2).Name = 'mcsType';
