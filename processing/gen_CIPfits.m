@@ -274,7 +274,7 @@ for ix = loopVctr
 		cipConc_hybrid_igf.(sprlNames{ix}) = NaN(size(cipConc,1),numExt_bins); % Will contain observed CIP data, with IGF values beyond D=2mm
 		cipMass_ext_igf.(sprlNames{ix}) = NaN(size(cipMass,1),numExt_bins);
 		cipMass_hybrid_igf.(sprlNames{ix}) = NaN(size(cipMass,1),numExt_bins);
-
+		twcRatio.(sprlNames{ix}) = NaN(size(cipMass,1),1);
 		
 		fitSkipIx.(sprlNames{ix}) = [];
 		negLmdaIx.(sprlNames{ix}) = [];
@@ -306,7 +306,16 @@ for ix = loopVctr
 			
 			% We want to create the extended distributions if lambda is positive or NaN (NaN yields the obs. PSD with NaNs
 			% in the extended size range
-			if lmda_tmp > 0 || isnan(lmda_tmp)
+			% First if-statement below accounts for single oddball case from PECAN
+			%   where a postive derived lambda value was less than 1.0, and caused
+			%   the resulting fit N(D) to decrease too slowly in the extended range,
+			%   which in turn allowed for an M(D) which increased in the extended range...
+			if strcmp(flight,'20150709') && ix == 8
+				lmdaThresh = 1.0;
+			else
+				lmdaThresh = 0.0;
+			end
+			if lmda_tmp > lmdaThresh || isnan(lmda_tmp)
 				cipConc_hybrid_igf.(sprlNames{ix})(time,1:length(cip_binMid)) = cipObsConc;
 				cipConc_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = ...
 					10^n0_tmp.*cipExt_binMid(length(cip_binMid)+1:end).^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid(length(cip_binMid)+1:end));
@@ -337,14 +346,14 @@ for ix = loopVctr
 						cipTWC_extOnly = NaN;
 					end
 					
-					twcRatio = cipTWC_extOnly/cipTWC_obsOnly;
+					twcRatio.(sprlNames{ix})(time) = cipTWC_extOnly/cipTWC_obsOnly;
 					
-					if twcRatio > twcRatioThresh
+					if twcRatio.(sprlNames{ix})(time) > twcRatioThresh
 						cipConc_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = NaN;
 						cipConc_ext_igf.(sprlNames{ix})(time,:) = NaN;
 						cipMass_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = NaN;
 						cipMass_ext_igf.(sprlNames{ix})(time,:) = NaN;
-						fprintf('\t\tIGF TWC ratio > %.2f (%.2f). Extended distribution set to NaN\n',twcRatioThresh,twcRatio);
+						fprintf('\t\tIGF TWC ratio > %.2f (%.2f). Extended distribution set to NaN\n',twcRatioThresh,twcRatio.(sprlNames{ix})(time));
 					end
 				end
 				
@@ -391,7 +400,7 @@ end
 if saveMat
 	clearvars('chkTWCratio', 'cipConc', 'cipConcSprl', 'cipDataF', 'cipMass', 'cipMassSprl', 'cipObsConc', 'cipObsMass',... 
 		'cipTWC_extOnly', 'cipTWC_obsOnly', 'doEvryTStp', 'doSprl', 'doTempBins', 'ii', 'ix', 'iz',...
-		'lmda_tmp', 'mu_tmp', 'n0_tmp','saveMat', 'sprlUp', 'tempBins', 'tempC_sprlOrig', 'time', 'tmp', 'twcRatio',...
+		'lmda_tmp', 'mu_tmp', 'n0_tmp','saveMat', 'sprlUp', 'tempBins', 'tempC_sprlOrig', 'time', 'tmp',...
 		'nanConcIx_ext_igf','nanConcIx_hybrid_igf','nanMassIx_ext_igf','nanMassIx_hybrid_igf');
 	save([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat'],'-regexp','^(?!dataPath$|fileIdStr$)\w');
 end
