@@ -1,8 +1,8 @@
 clearvars; close all;
 
 %% Specify various plotting/calculation parameters
-flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
-% flights = {'20150709'};
+% % flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
+% flights = {'20150701','20150702','20150706','20150709'};
 
 avgTime = 10;
 
@@ -20,13 +20,13 @@ end
 % Standard plots, but using hybrid (CIP obs + CIP extended) SDs
 getLims = 0; % If true, run without plotting and print values to assist in setting axis limits
 
-plotND				= 1;
-plotNDall			= 1;
+plotND				= 0;
+plotNDall			= 0;
 plotNDtemp			= 0;
 plotNDtempBinned	= 1;
 
-plotMD				= 1;
-plotMDall			= 1;
+plotMD				= 0;
+plotMDall			= 0;
 plotMDtemp			= 0;
 plotMDtempBinned	= 1;
 
@@ -470,7 +470,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-Temp_S%d_%ddegC',saveDir,flight,ix,tempBins(iii)),Ftype,Fres)
+						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-Temp_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
@@ -803,7 +803,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-Temp_S%d_%ddegC',saveDir,flight,ix,tempBins(iii)),Ftype,Fres)
+						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-Temp_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
