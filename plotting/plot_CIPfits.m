@@ -1,8 +1,8 @@
 clearvars; close all;
 
 %% Specify various plotting/calculation parameters
-% % flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
-% flights = {'20150701','20150702','20150706','20150709'};
+flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
+% flights = {'20150617'};
 
 avgTime = 10;
 
@@ -23,12 +23,12 @@ getLims = 0; % If true, run without plotting and print values to assist in setti
 plotND				= 0;
 plotNDall			= 0;
 plotNDtemp			= 0;
-plotNDtempBinned	= 1;
+plotNDtempBinned	= 0;
 
 plotMD				= 0;
 plotMDall			= 0;
 plotMDtemp			= 0;
-plotMDtempBinned	= 1;
+plotMDtempBinned	= 0;
 
 plotNtTemp			= 0;
 plotTWCtemp			= 0;
@@ -36,6 +36,10 @@ plotDmmTemp			= 0;
 
 plotTWCextndRatio	= 0;
 plotMDratioExcd		= 0; % Plot indvdl M(D) for periods where mass ratio between obs and extended is exceeded
+
+
+% Plots using the unextended data only
+plotARsprls  = 1;
 
 
 if zoom
@@ -46,8 +50,8 @@ end
 % diamLim = [0.1 inf];
 
 
-saveFigs	= 1;
-noDisp		= 1;
+saveFigs	= 0;
+noDisp		= 0;
 fullVec		= 0;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
@@ -62,15 +66,19 @@ end
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
-% Create list of vars to keep at end of each loop
-initialVars = who;
-initialVars{end+1} = 'iFlt';
-initialVars{end+1} = 'initialVars';
+
+% Initialize variables to be analyzed over all flights/spirals
+cipAR_sprlAvgs = NaN(42,34); % 42 spirals, with 34 diameter bins each
+
+iSprl = 1; % Counter for total number of spirals (used in whole-project variable concat)
+
+
+
 
 for iFlt = 1:length(flights)
 	flight = flights{iFlt};
 	fprintf('\nPlotting %s...\n',flight);
-	%% Load in struct of all original SD data
+	%% Load in struct of all original SD data and the CIP Fitted Data
 	if avgTime == 1
 		sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']; % 1-sec averages are saved in all averaged output files
 	else
@@ -79,9 +87,11 @@ for iFlt = 1:length(flights)
 
 	sDistF = load(sDistFile);
 
+	load([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat']);
 
 	%% Create directories to save plots in if they don't already exist
 	if saveFigs
+		%%% Save info and directory operations for CIP Fit plots
 		saveDir = [savePath flight '/CIP-Fitting'];
 		if (exist(saveDir, 'dir') ~= 7)
 			mkdir(saveDir)
@@ -117,67 +127,127 @@ for iFlt = 1:length(flights)
 		if (plotDmmTemp && exist([saveDir '/CIP-Dmm-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-Dmm-Temp_' num2str(avgTime) 's'])
 		end
+		
+		
+		%%% Save info and directory operations for CIP Obs plots
+		saveDirObs = savePath;
+		if (exist(saveDirObs, 'dir') ~= 7)
+			mkdir(saveDirObs)
+		end
+		
+		if (plotARsprls && exist([saveDirObs '/CIP-AR-Sprls_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDirObs '/CIP-AR-Sprls_' num2str(avgTime) 's'])
+		end
 	end
 
-	load([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat']);
-
+	%%% Save a list of variables we want to keep across all iterations
+	if iFlt == 1
+		initialVars = who;
+		initialVars{end+1} = 'initialVars';
+	end
+	
 	loopVctr = 1:length(sprlNames);
 	% loopVctr = [2];
 
 	%% Specify flight-specific plotting parameters
 	tempRangeAll = [-18.5 22];
 
+	if zoom
+		NDLim = [1e-4 10];
+		MDLim = [1e-8 5e-5];
+	else
+		NDLim = [1e-6 20];
+		MDLim = [1e-10 5e-5];
+	end
+	NDLogLim = [-4 2];
+	MDLogLim = [-8 -4];
+	NtLim = [5.5e-6 0.5];
+	TWClim = [4.4e-5 2.1];
+	DmmLim = [0 2.5];
+	
+	% Switch statement to allow for flight-specific plot limits
+	%{
 	switch flight
 		case '20150617'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5]; 
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 		case '20150620'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5];
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 		case '20150701'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5];
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 		case '20150702'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5];
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 		case '20150706'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5];
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 		case '20150709'
-			NDLim = [5e-8 20];
+			if zoom
+				NDLim = [1e-4 10];
+				MDLim = [1e-8 5e-5]; 
+			else
+				NDLim = [1e-6 20];
+				MDLim = [1e-10 5e-5]; 
+			end
 			NDLogLim = [-4 2];
-			MDLim = [5e-10 2.4e-5];
-			MDLogLim = [-9 -4];
-			NtLim = [4.5e-6 0.5];
-			TWClim = [4.5e-6 2.1];
+			MDLogLim = [-8 -4];
+			NtLim = [5.5e-6 0.5];
+			TWClim = [4.4e-5 2.1];
 			DmmLim = [0 2.5];
 	end
-
+	%}
 
 	%% Standard plots
 	if plotND
@@ -216,7 +286,7 @@ for iFlt = 1:length(flights)
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+				print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP_ND_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 			end
 		end
 	end
@@ -231,9 +301,15 @@ for iFlt = 1:length(flights)
 
 			colors = varycolor(size(cipConc,1));
 			if getLims
-				tmpMean = nanmean(cipConc(:,1:53),1);%1:53 gives us 0-5.8mm bins
-				maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
-				minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+				if zoom
+					tmpMean = nanmean(cipConc(:,1:37),1);%1:37 gives us 0-2.6mm bins
+					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+				else
+					tmpMean = nanmean(cipConc(:,1:53),1);%1:53 gives us 0-5.8mm bins
+					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+				end
 			else
 				if saveFigs && noDisp
 					figure('visible','off','Position', [10,10,1200,700]);
@@ -273,7 +349,7 @@ for iFlt = 1:length(flights)
 					set(gcf,'Units','Inches');
 					pos = get(gcf,'Position');
 					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-					print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP-Fit_ND_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
+					print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP_ND_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
 				end
 			end
 		end
@@ -436,9 +512,15 @@ for iFlt = 1:length(flights)
 				end
 
 				if getLims
-					tmpMean = nanmean(cipConc(:,1:53),1);%1:53 gives us 0-5.8mm bins
-					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
-					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+					if zoom
+						tmpMean = nanmean(cipConc(:,1:37),1);%1:37 gives us 0-2.6mm bins
+						maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+						minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+					else
+						tmpMean = nanmean(cipConc(:,1:53),1);%1:53 gives us 0-5.8mm bins
+						maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+						minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+					end
 				else
 					if saveFigs && noDisp
 						figure('visible','off','Position', [10,10,1500,1000]);
@@ -470,7 +552,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-Temp_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
+						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-TempB_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
@@ -481,7 +563,6 @@ for iFlt = 1:length(flights)
 			fprintf('maxConc = %.2g\n',nanmax(maxConc))
 		end
 	end
-	
 	
 	if plotMD
 		for ix = loopVctr
@@ -533,7 +614,7 @@ for iFlt = 1:length(flights)
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+				print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP_MD_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 			end
 		end
 	end
@@ -547,9 +628,15 @@ for iFlt = 1:length(flights)
 
 			colors = varycolor(size(cipMass,1));
 			if getLims
-				tmpMean = nanmean(cipMass(:,1:53),1);%1:53 gives us 0-5.8mm bins
-				maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
-				minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+				if zoom
+					tmpMean = nanmean(cipMass(:,1:37),1);%1:37 gives us 0-2.6mm bins
+					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+				else
+					tmpMean = nanmean(cipMass(:,1:53),1);%1:53 gives us 0-5.8mm bins
+					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+				end
 			else
 				if saveFigs && noDisp
 					figure('visible','off','Position', [10,10,1200,700]);
@@ -589,7 +676,7 @@ for iFlt = 1:length(flights)
 					set(gcf,'Units','Inches');
 					pos = get(gcf,'Position');
 					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-					print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP-Fit_MD_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
+					print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP_MD_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
 				end
 			end
 		end
@@ -752,9 +839,15 @@ for iFlt = 1:length(flights)
 				end
 
 				if getLims
-					tmpMean = nanmean(cipMass(:,1:53),1);%1:53 gives us 0-5.8mm bins
-					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
-					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+					if zoom
+						tmpMean = nanmean(cipMass(:,1:37),1);%1:37 gives us 0-2.6mm bins
+						maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+						minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+					else
+						tmpMean = nanmean(cipMass(:,1:53),1);%1:53 gives us 0-5.8mm bins
+						maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+						minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+					end
 				else
 					if saveFigs && noDisp
 						figure('visible','off','Position', [10,10,1500,1000]);
@@ -803,7 +896,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-Temp_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
+						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-TempB_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
@@ -815,7 +908,6 @@ for iFlt = 1:length(flights)
 		end
 	end
 	
-
 	if plotNtTemp
 		if getLims
 			maxNt = [];
@@ -1029,7 +1121,6 @@ for iFlt = 1:length(flights)
 		end
 	end
 	
-	
 	if plotTWCextndRatio
 		for ix = loopVctr
 
@@ -1075,7 +1166,7 @@ for iFlt = 1:length(flights)
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-TWCextndRatio_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+				print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP_TWCextndRatio_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
 			end
 
 			if plotMDratioExcd
@@ -1118,13 +1209,74 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP-MD-TWCratioExcd_S' num2str(ix) '_' num2str(ratioExcd(irx))],Ftype,Fres)
+						print([saveDir '/CIP-TWCextndRatio_' num2str(avgTime) 's/' flight '_CIP_MD-TWCratioExcd_S' num2str(ix) '_' num2str(ratioExcd(irx))],Ftype,Fres)
 					end
 				end
 			end
 		end
 	end
 	
+	
+	%% Concatenate multi-flight variables
+	for ix = loopVctr
+		if ~isnan(mlTopTime(ix))
+			[~, topIx] = min(abs(sDistF.time_secs_avg.(sprlNames{ix}) - mlTopTime(ix))); % ix of nearest time matching ML top
+		else
+			[~, topIx] = min(abs(sDistF.tempC_avg.(sprlNames{ix}))); % ix of nearest temp nearest 0 deg C
+		end
+		
+		if sDistF.tempC_avg.(sprlNames{ix})(1) < sDistF.tempC_avg.(sprlNames{ix})(end) % Spiral down
+			cipAR_sprlAvgs(iSprl,:) = nanmean(sDistF.mean_areaRatio_avg.(sprlNames{ix})(1:topIx-1,:),1);
+		else % Spiral up
+			cipAR_sprlAvgs(iSprl,:) = nanmean(sDistF.mean_areaRatio_avg.(sprlNames{ix})(topIx+1:end,:),1);
+		end
+		
+		iSprl = iSprl+1;
+	end
+	
+	
 	close all;
-	clearvars('-except',initialVars{:});
+% 	clearvars('-except',initialVars{:});
+end
+
+
+%% Make any whole-project plots
+if plotARsprls
+	colors = varycolor(42);
+	if saveFigs && noDisp
+		figure('visible','off','Position', [10,10,1000,1000]);
+	else
+		figure('Position', [10,10,1000,1000]);
+	end
+	
+	hold on
+		
+	for ix = 1:42
+		plot(cip_binMid*10, cipAR_sprlAvgs(ix,:)*100','Color',colors(ix,:), 'LineWidth', 2);
+% 		plot(cip_binMid*10, cipAR_sprlAvgs(ix,:)*100','wo','MarkerSize',10,'MarkerFaceColor',colors(ix,:));
+	end
+	
+	title('PECAN - Mean Area Ratio ($T \le 0^{\circ}C$) - All Spirals','Interpreter','latex');
+	
+	xlabel('D (mm)');
+	ylabel('Area Ratio (%)');
+	set(gca,'Xscale','log');
+	xlim([0.03 2]);
+
+	
+	colormap(colors)
+	colorbar('Ticks',[0 1],'TickLabels',{'First','Last'})
+	
+	set(gca,'XMinorTick','on','YMinorTick','on');
+	set(findall(gcf,'-property','FontSize'),'FontSize',28)
+	grid
+	
+	
+	if saveFigs
+		set(gcf,'Units','Inches');
+		pos = get(gcf,'Position');
+		set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+		print([saveDirObs '/CIP-AR-Sprls_' num2str(avgTime) 's/CIP_AR-AllSprls_Temp-lte0' fNameAppnd],Ftype,Fres)
+	end
+
 end

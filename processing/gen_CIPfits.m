@@ -8,7 +8,14 @@ avgTime = 10;
 extnd12cm = 1; %1.2cm
 extnd55cm = 0; %5.5cm
 
-numValid = 17; % Required number of bins with valid data needed for given SD to be fit
+if extnd12cm
+	numValid = 17; % Required number of bins with valid data needed for given SD to be fit
+	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
+end
+if extnd55cm
+	numValid = 24;
+	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_5cm'];
+end
 
 % Check ratio of TWC from the extended portion of the PSD to that from the observed portion
 % If this ratio exceeds the given threshold, the extended portion of the PSD will be set to NaN
@@ -30,13 +37,6 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 a = 7.38e-11;
 b = 1.9;
 
-
-if extnd12cm
-	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
-end
-if extnd55cm
-	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_5cm'];
-end
 diary([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.log'])
 
 %% Load in CIP SD file and then extract only the variables we need from it

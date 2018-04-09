@@ -4,7 +4,7 @@
 clearvars;
 
 
-flight = '20150709';
+flight = '20150617';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
