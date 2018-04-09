@@ -3,13 +3,11 @@
 
 clearvars
 
-flight = '20150709';
+flight = '20150617';
 
 probe = 'CIP';
 
 avgTime = 10; % sec
-
-calcRej = 0;
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -21,11 +19,8 @@ mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
 outFileAppend = '';
 
 %% Define filenames
-if calcRej
-	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe 'wRejSD.cdf'];
-else
-	sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.cdf'];
-end
+sDistFile = [dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.' probe '.cdf'];
+
 flFile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
 
@@ -64,32 +59,19 @@ mean_aspectRatio_elps_all = (nc_varget(sDistFile,'mean_aspect_ratio_ellipse'))';
 mean_areaRatio_all = (nc_varget(sDistFile,'mean_area_ratio'))';
 mean_perim_all = (nc_varget(sDistFile,'mean_perimeter'))';
 
-if calcRej
-	rej_conc_minR_all = (nc_varget(sDistFile,'REJ_conc_minR'))';
-	rej_area_all = permute(nc_varget(sDistFile,'REJ_area'),[3 2 1]);
-	rej_area_calcd_all = (nc_varget(sDistFile,'REJ_Calcd_area'))';
-	rej_conc_AreaR_all = (nc_varget(sDistFile,'REJ_conc_AreaR'))';
-	rej_n_all = nc_varget(sDistFile,'REJ_n');
-	rej_total_area_all = (nc_varget(sDistFile,'REJ_total_area'))';
-	rej_mass_all = (nc_varget(sDistFile,'REJ_mass'))';
-	rej_massBL_all = (nc_varget(sDistFile,'REJ_massBL'))';
-	rej_sd_habit_all = permute(nc_varget(sDistFile,'REJ_habitsd'),[3 2 1]);
-	rej_sdMass_habit_all = permute(nc_varget(sDistFile,'REJ_habitmsd'),[3 2 1]);
-	rej_efct_rad_all = nc_varget(sDistFile,'REJ_re');
-	rej_area_ratio_all = nc_varget(sDistFile,'REJ_ar');
-	rej_termVeloc_all = (nc_varget(sDistFile,'REJ_vt'))';
-	rej_prec_rate_all = (nc_varget(sDistFile,'REJ_Prec_rate'))';
-	rej_count_all = (nc_varget(sDistFile,'REJ_count'))';
-	
-	rej_mean_aspectRatio_rect_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_rectangle'))';
-	rej_mean_aspectRatio_elps_all = (nc_varget(sDistFile,'REJ_mean_aspect_ratio_ellipse'))';
-	rej_mean_areaRatio_all = (nc_varget(sDistFile,'REJ_mean_area_ratio'))';
-	rej_mean_perim_all = (nc_varget(sDistFile,'REJ_mean_perimeter'))';
-end
 
 time_secs_all = hhmmss2insec(timehhmmss);
 
 num_bins = length(bin_mid);
+
+
+%% Change 0's to NaNs in terminal velocity and effective radius
+% Old version of sizeDist incorrectly set periods with no particles to 0
+% for these vars, which does not make sense
+efct_rad_all(efct_rad_all == 0) = NaN;
+termVeloc_ice_all(termVeloc_ice_all == 0) = NaN;
+termVeloc_lw_all(termVeloc_lw_all == 0) = NaN;
+
 
 
 %% Import relevant flight-level data
@@ -155,66 +137,41 @@ for ix=1:length(startT)
 	%% Create empty structs for each averaged variable with a new structure field for each spiral
 	
 	%%% Flight-level variables
-	tempC_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	RH_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	alt_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	time_secsFL_avg.(spiralStr) = zeros(maxLength,1)*NaN;
+	tempC_avg.(spiralStr) = NaN(maxLength,1);
+	RH_avg.(spiralStr) = NaN(maxLength,1);
+	alt_avg.(spiralStr) = NaN(maxLength,1);
+	time_secsFL_avg.(spiralStr) = NaN(maxLength,1);
 	
 	%%% Accepted particles
-	area_ratio_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	reject_ratio_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	efct_rad_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	n_avg.(spiralStr) = zeros(maxLength,1)*NaN;
+	area_ratio_avg.(spiralStr) = NaN(maxLength,1);
+	reject_ratio_avg.(spiralStr) = NaN(maxLength,1);
+	efct_rad_avg.(spiralStr) = NaN(maxLength,1);
+	n_avg.(spiralStr) = NaN(maxLength,1);
 	
-	iwc_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	lwc_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-	twc_avg.(spiralStr) = zeros(maxLength,1)*NaN;
+	iwc_avg.(spiralStr) = NaN(maxLength,1);
+	lwc_avg.(spiralStr) = NaN(maxLength,1);
+	twc_avg.(spiralStr) = NaN(maxLength,1);
 	
-	conc_minR_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mean_perim_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mean_areaRatio_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mean_aspectRatio_elps_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mean_aspectRatio_rect_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	count_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	area_calcd_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	prec_rate_ice_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	prec_rate_lw_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	termVeloc_ice_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	termVeloc_lw_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	massBL_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mass_ice_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	mass_lw_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	total_area_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-	conc_AreaR_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
+	conc_minR_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mean_perim_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mean_areaRatio_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mean_aspectRatio_elps_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mean_aspectRatio_rect_avg.(spiralStr) = NaN(maxLength,num_bins);
+	count_avg.(spiralStr) = NaN(maxLength,num_bins);
+	area_calcd_avg.(spiralStr) = NaN(maxLength,num_bins);
+	prec_rate_ice_avg.(spiralStr) = NaN(maxLength,num_bins);
+	prec_rate_lw_avg.(spiralStr) = NaN(maxLength,num_bins);
+	termVeloc_ice_avg.(spiralStr) = NaN(maxLength,num_bins);
+	termVeloc_lw_avg.(spiralStr) = NaN(maxLength,num_bins);
+	massBL_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mass_ice_avg.(spiralStr) = NaN(maxLength,num_bins);
+	mass_lw_avg.(spiralStr) = NaN(maxLength,num_bins);
+	total_area_avg.(spiralStr) = NaN(maxLength,num_bins);
+	conc_AreaR_avg.(spiralStr) = NaN(maxLength,num_bins);
 	
 	area_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
 	sd_habit_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
 	sdMass_habit_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
-	
-	%%% Rejected particles
-	if calcRej
-		rej_area_ratio_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-		rej_efct_rad_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-		rej_n_avg.(spiralStr) = zeros(maxLength,1)*NaN;
-		
-		rej_conc_minR_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_mean_perim_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_mean_areaRatio_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_mean_aspectRatio_elps_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_mean_aspectRatio_rect_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_count_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_area_calcd_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_prec_rate_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_termVeloc_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_massBL_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_mass_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_total_area_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		rej_conc_AreaR_avg.(spiralStr) = zeros(maxLength,num_bins)*NaN;
-		
-		rej_area_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
-		rej_sd_habit_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
-		rej_sdMass_habit_avg.(spiralStr) = zeros(maxLength,num_bins,10)*NaN;
-	end
 	
 	
 	
@@ -259,31 +216,6 @@ for ix=1:length(startT)
 	
 	time_secs_orig.(spiralStr) = time_secs_all(sprlLocs);
 	
-	
-	%%% Rejected particles
-	if calcRej
-		rej_area_ratio_orig.(spiralStr) = rej_area_ratio_all(sprlLocs);
-		rej_efct_rad_orig.(spiralStr) = rej_efct_rad_all(sprlLocs);
-		rej_n_orig.(spiralStr) = rej_n_all(sprlLocs);
-		
-		rej_conc_minR_orig.(spiralStr) = rej_conc_minR_all(sprlLocs,:);
-		rej_mean_perim_orig.(spiralStr) = rej_mean_perim_all(sprlLocs,:);
-		rej_mean_areaRatio_orig.(spiralStr) = rej_mean_areaRatio_all(sprlLocs,:);
-		rej_mean_aspectRatio_elps_orig.(spiralStr) = rej_mean_aspectRatio_elps_all(sprlLocs,:);
-		rej_mean_aspectRatio_rect_orig.(spiralStr) = rej_mean_aspectRatio_rect_all(sprlLocs,:);
-		rej_count_orig.(spiralStr) = rej_count_all(sprlLocs,:);
-		rej_area_calcd_orig.(spiralStr) = rej_area_calcd_all(sprlLocs,:);
-		rej_prec_rate_orig.(spiralStr) = rej_prec_rate_all(sprlLocs,:);
-		rej_termVeloc_orig.(spiralStr) = rej_termVeloc_all(sprlLocs,:);
-		rej_massBL_orig.(spiralStr) = rej_massBL_all(sprlLocs,:);
-		rej_mass_orig.(spiralStr) = rej_mass_all(sprlLocs,:);
-		rej_total_area_orig.(spiralStr) = rej_total_area_all(sprlLocs,:);
-		rej_conc_AreaR_orig.(spiralStr) = rej_conc_AreaR_all(sprlLocs,:);
-		
-		rej_area_orig.(spiralStr) = rej_area_all(sprlLocs,:,:);
-		rej_sd_habit_orig.(spiralStr) = rej_sd_habit_all(sprlLocs,:,:);
-		rej_sdMass_habit_orig.(spiralStr) = rej_sdMass_habit_all(sprlLocs,:,:);
-	end
 	
 	%% Calculate total water content and median mass diameter 
 	% Melting layer bottom (defined visually as the time when first evidence of
@@ -338,127 +270,100 @@ for ix=1:length(startT)
 		%%% Flight-level variables
 		% Check to see if all values in average period are NaN and ensure the averaged value is also NaN (not 0)
 		if ~all(isnan(tempC_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			tempC_avg.(spiralStr)(i) = nansum(tempC_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			tempC_avg.(spiralStr)(i) = nanmean(tempC_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(RH_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			RH_avg.(spiralStr)(i) = nansum(RH_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			RH_avg.(spiralStr)(i) = nanmean(RH_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(alt_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			alt_avg.(spiralStr)(i) = nansum(alt_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			alt_avg.(spiralStr)(i) = nanmean(alt_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(time_secsFL_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			time_secsFL_avg.(spiralStr)(i) = nansum(time_secsFL_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			time_secsFL_avg.(spiralStr)(i) = nanmean(time_secsFL_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		
 		if ~all(isnan(iwc_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			iwc_avg.(spiralStr)(i) = nansum(iwc_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			iwc_avg.(spiralStr)(i) = nanmean(iwc_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(lwc_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			lwc_avg.(spiralStr)(i) = nansum(lwc_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			lwc_avg.(spiralStr)(i) = nanmean(lwc_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(twc_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			twc_avg.(spiralStr)(i) = nansum(twc_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			twc_avg.(spiralStr)(i) = nanmean(twc_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		
 		if ~all(isnan(area_ratio_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			area_ratio_avg.(spiralStr)(i) = nansum(area_ratio_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			area_ratio_avg.(spiralStr)(i) = nanmean(area_ratio_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(reject_ratio_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			reject_ratio_avg.(spiralStr)(i) = nansum(reject_ratio_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			reject_ratio_avg.(spiralStr)(i) = nanmean(reject_ratio_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(efct_rad_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			efct_rad_avg.(spiralStr)(i) = nansum(efct_rad_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			efct_rad_avg.(spiralStr)(i) = nanmean(efct_rad_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(n_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			n_avg.(spiralStr)(i) = nansum(n_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			n_avg.(spiralStr)(i) = nanmean(n_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		if ~all(isnan(time_secs_orig.(spiralStr)(iz:iz+(avgTime-1))))
-			time_secs_avg.(spiralStr)(i) = nansum(time_secs_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
+			time_secs_avg.(spiralStr)(i) = nanmean(time_secs_orig.(spiralStr)(iz:iz+(avgTime-1)),1);
 		end
 		
 		for ib = 1:length(bin_mid)
 			if ~all(isnan(conc_minR_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				conc_minR_avg.(spiralStr)(i,ib) = nansum(conc_minR_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				conc_minR_avg.(spiralStr)(i,ib) = nanmean(conc_minR_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(mean_perim_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				mean_perim_avg.(spiralStr)(i,ib) = nansum(mean_perim_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				mean_perim_avg.(spiralStr)(i,ib) = nanmean(mean_perim_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(mean_areaRatio_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				mean_areaRatio_avg.(spiralStr)(i,ib) = nansum(mean_areaRatio_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				mean_areaRatio_avg.(spiralStr)(i,ib) = nanmean(mean_areaRatio_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(mean_aspectRatio_elps_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				mean_aspectRatio_elps_avg.(spiralStr)(i,ib) = nansum(mean_aspectRatio_elps_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				mean_aspectRatio_elps_avg.(spiralStr)(i,ib) = nanmean(mean_aspectRatio_elps_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(mean_aspectRatio_rect_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				mean_aspectRatio_rect_avg.(spiralStr)(i,ib) = nansum(mean_aspectRatio_rect_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				mean_aspectRatio_rect_avg.(spiralStr)(i,ib) = nanmean(mean_aspectRatio_rect_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(count_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				count_avg.(spiralStr)(i,ib) = nansum(count_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				count_avg.(spiralStr)(i,ib) = nanmean(count_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(sampleVol_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				sampleVol_avg.(spiralStr)(i,ib) = nansum(sampleVol_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				sampleVol_avg.(spiralStr)(i,ib) = nanmean(sampleVol_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(area_calcd_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				area_calcd_avg.(spiralStr)(i,ib) = nansum(area_calcd_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				area_calcd_avg.(spiralStr)(i,ib) = nanmean(area_calcd_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(prec_rate_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				prec_rate_ice_avg.(spiralStr)(i,ib) = nansum(prec_rate_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				prec_rate_ice_avg.(spiralStr)(i,ib) = nanmean(prec_rate_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(termVeloc_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				termVeloc_ice_avg.(spiralStr)(i,ib) = nansum(termVeloc_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				termVeloc_ice_avg.(spiralStr)(i,ib) = nanmean(termVeloc_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(massBL_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				massBL_avg.(spiralStr)(i,ib) = nansum(massBL_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				massBL_avg.(spiralStr)(i,ib) = nanmean(massBL_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(mass_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				mass_ice_avg.(spiralStr)(i,ib) = nansum(mass_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				mass_ice_avg.(spiralStr)(i,ib) = nanmean(mass_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(total_area_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				total_area_avg.(spiralStr)(i,ib) = nansum(total_area_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				total_area_avg.(spiralStr)(i,ib) = nanmean(total_area_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(conc_AreaR_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
-				conc_AreaR_avg.(spiralStr)(i,ib) = nansum(conc_AreaR_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1)/avgTime;
+				conc_AreaR_avg.(spiralStr)(i,ib) = nanmean(conc_AreaR_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 
 			for ih = 1:10
 				if ~all(isnan(area_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih)))
-					area_avg.(spiralStr)(i,ib,ih) = nansum(area_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1)/avgTime;
+					area_avg.(spiralStr)(i,ib,ih) = nanmean(area_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1);
 				end
 				if ~all(isnan(sd_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih)))
-					sd_habit_avg.(spiralStr)(i,ib,ih) = nansum(sd_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1)/avgTime;
+					sd_habit_avg.(spiralStr)(i,ib,ih) = nanmean(sd_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1);
 				end
 				if ~all(isnan(sdMass_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih)))
-					sdMass_habit_avg.(spiralStr)(i,ib,ih) = nansum(sdMass_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1)/avgTime;
+					sdMass_habit_avg.(spiralStr)(i,ib,ih) = nanmean(sdMass_habit_orig.(spiralStr)(iz:iz+(avgTime-1),ib,ih),1);
 				end
 			end
 		end
-		
-		
-		
-		%%% Rejected particles
-% 		if calcRej
-% 			rej_area_ratio_avg.(spiralStr)(i) = nansum(rej_area_ratio_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
-% 			rej_efct_rad_avg.(spiralStr)(i) = nansum(rej_efct_rad_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
-% 			rej_n_avg.(spiralStr)(i) = nansum(rej_n_orig.(spiralStr)(iz:iz+(avgTime-1)),1)/avgTime;
-% 
-% 			rej_conc_minR_avg.(spiralStr)(i,:) = nansum(rej_conc_minR_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_mean_perim_avg.(spiralStr)(i,:) = nansum(rej_mean_perim_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_mean_areaRatio_avg.(spiralStr)(i,:) = nansum(rej_mean_areaRatio_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_mean_aspectRatio_elps_avg.(spiralStr)(i,:) = nansum(rej_mean_aspectRatio_elps_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_mean_aspectRatio_rect_avg.(spiralStr)(i,:) = nansum(rej_mean_aspectRatio_rect_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_count_avg.(spiralStr)(i,:) = nansum(rej_count_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_area_calcd_avg.(spiralStr)(i,:) = nansum(rej_area_calcd_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_prec_rate_avg.(spiralStr)(i,:) = nansum(rej_prec_rate_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_termVeloc_avg.(spiralStr)(i,:) = nansum(rej_termVeloc_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_massBL_avg.(spiralStr)(i,:) = nansum(rej_massBL_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_mass_avg.(spiralStr)(i,:) = nansum(rej_mass_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_total_area_avg.(spiralStr)(i,:) = nansum(rej_total_area_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 			rej_conc_AreaR_avg.(spiralStr)(i,:) = nansum(rej_conc_AreaR_orig.(spiralStr)(iz:iz+(avgTime-1),:),1)/avgTime;
-% 
-% 			rej_area_avg.(spiralStr)(i,:,:) = nansum(rej_area_orig.(spiralStr)(iz:iz+(avgTime-1),:,:),1)/avgTime;
-% 			rej_sd_habit_avg.(spiralStr)(i,:,:) = nansum(rej_sd_habit_orig.(spiralStr)(iz:iz+(avgTime-1),:,:),1)/avgTime;
-% 			rej_sdMass_habit_avg.(spiralStr)(i,:,:) = nansum(rej_sdMass_habit_orig.(spiralStr)(iz:iz+(avgTime-1),:,:),1)/avgTime;
-% 		end
 
 		i=i+1;
 	end
@@ -467,126 +372,100 @@ for ix=1:length(startT)
 	if remain
 		%%% Flight-level variables
 		if ~all(isnan(tempC_orig.(spiralStr)(neatLength+1:end)))
-			tempC_avg.(spiralStr)(maxLength) = nansum(tempC_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			tempC_avg.(spiralStr)(maxLength) = nanmean(tempC_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(RH_orig.(spiralStr)(neatLength+1:end)))
-			RH_avg.(spiralStr)(maxLength) = nansum(RH_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			RH_avg.(spiralStr)(maxLength) = nanmean(RH_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(alt_orig.(spiralStr)(neatLength+1:end)))
-			alt_avg.(spiralStr)(maxLength) = nansum(alt_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			alt_avg.(spiralStr)(maxLength) = nanmean(alt_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(time_secsFL_orig.(spiralStr)(neatLength+1:end)))
-			time_secsFL_avg.(spiralStr)(maxLength) = nansum(time_secsFL_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			time_secsFL_avg.(spiralStr)(maxLength) = nanmean(time_secsFL_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		
 		if ~all(isnan(iwc_orig.(spiralStr)(neatLength+1:end)))
-			iwc_avg.(spiralStr)(maxLength) = nansum(iwc_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			iwc_avg.(spiralStr)(maxLength) = nanmean(iwc_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(lwc_orig.(spiralStr)(neatLength+1:end)))
-			lwc_avg.(spiralStr)(maxLength) = nansum(lwc_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			lwc_avg.(spiralStr)(maxLength) = nanmean(lwc_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(twc_orig.(spiralStr)(neatLength+1:end)))
-			twc_avg.(spiralStr)(maxLength) = nansum(twc_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			twc_avg.(spiralStr)(maxLength) = nanmean(twc_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		
 		if ~all(isnan(area_ratio_orig.(spiralStr)(neatLength+1:end)))
-			area_ratio_avg.(spiralStr)(maxLength) = nansum(area_ratio_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			area_ratio_avg.(spiralStr)(maxLength) = nanmean(area_ratio_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(reject_ratio_orig.(spiralStr)(neatLength+1:end)))
-			reject_ratio_avg.(spiralStr)(maxLength) = nansum(reject_ratio_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			reject_ratio_avg.(spiralStr)(maxLength) = nanmean(reject_ratio_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(efct_rad_orig.(spiralStr)(neatLength+1:end)))
-			efct_rad_avg.(spiralStr)(maxLength) = nansum(efct_rad_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			efct_rad_avg.(spiralStr)(maxLength) = nanmean(efct_rad_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(n_orig.(spiralStr)(neatLength+1:end)))
-			n_avg.(spiralStr)(maxLength) = nansum(n_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			n_avg.(spiralStr)(maxLength) = nanmean(n_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		if ~all(isnan(time_secs_orig.(spiralStr)(neatLength+1:end)))
-			time_secs_avg.(spiralStr)(maxLength) = nansum(time_secs_orig.(spiralStr)(neatLength+1:end),1)/leftover;
+			time_secs_avg.(spiralStr)(maxLength) = nanmean(time_secs_orig.(spiralStr)(neatLength+1:end),1);
 		end
 		
 		for ib = 1:length(bin_mid)
 			if ~all(isnan(conc_minR_orig.(spiralStr)(neatLength+1:end,ib)))
-				conc_minR_avg.(spiralStr)(maxLength,ib) = nansum(conc_minR_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				conc_minR_avg.(spiralStr)(maxLength,ib) = nanmean(conc_minR_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(mean_perim_orig.(spiralStr)(neatLength+1:end,ib)))
-				mean_perim_avg.(spiralStr)(maxLength,ib) = nansum(mean_perim_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				mean_perim_avg.(spiralStr)(maxLength,ib) = nanmean(mean_perim_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(mean_areaRatio_orig.(spiralStr)(neatLength+1:end,ib)))
-				mean_areaRatio_avg.(spiralStr)(maxLength,ib) = nansum(mean_areaRatio_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				mean_areaRatio_avg.(spiralStr)(maxLength,ib) = nanmean(mean_areaRatio_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(mean_aspectRatio_elps_orig.(spiralStr)(neatLength+1:end,ib)))
-				mean_aspectRatio_elps_avg.(spiralStr)(maxLength,ib) = nansum(mean_aspectRatio_elps_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				mean_aspectRatio_elps_avg.(spiralStr)(maxLength,ib) = nanmean(mean_aspectRatio_elps_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(mean_aspectRatio_rect_orig.(spiralStr)(neatLength+1:end,ib)))
-				mean_aspectRatio_rect_avg.(spiralStr)(maxLength,ib) = nansum(mean_aspectRatio_rect_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				mean_aspectRatio_rect_avg.(spiralStr)(maxLength,ib) = nanmean(mean_aspectRatio_rect_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(count_orig.(spiralStr)(neatLength+1:end,ib)))
-				count_avg.(spiralStr)(maxLength,ib) = nansum(count_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				count_avg.(spiralStr)(maxLength,ib) = nanmean(count_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(sampleVol_orig.(spiralStr)(neatLength+1:end,ib)))
-				sampleVol_avg.(spiralStr)(maxLength,ib) = nansum(sampleVol_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				sampleVol_avg.(spiralStr)(maxLength,ib) = nanmean(sampleVol_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(area_calcd_orig.(spiralStr)(neatLength+1:end,ib)))
-				area_calcd_avg.(spiralStr)(maxLength,ib) = nansum(area_calcd_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				area_calcd_avg.(spiralStr)(maxLength,ib) = nanmean(area_calcd_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(prec_rate_ice_orig.(spiralStr)(neatLength+1:end,ib)))
-				prec_rate_ice_avg.(spiralStr)(maxLength,ib) = nansum(prec_rate_ice_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				prec_rate_ice_avg.(spiralStr)(maxLength,ib) = nanmean(prec_rate_ice_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(termVeloc_ice_orig.(spiralStr)(neatLength+1:end,ib)))
-				termVeloc_ice_avg.(spiralStr)(maxLength,ib) = nansum(termVeloc_ice_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				termVeloc_ice_avg.(spiralStr)(maxLength,ib) = nanmean(termVeloc_ice_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(massBL_orig.(spiralStr)(neatLength+1:end,ib)))
-				massBL_avg.(spiralStr)(maxLength,ib) = nansum(massBL_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				massBL_avg.(spiralStr)(maxLength,ib) = nanmean(massBL_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(mass_ice_orig.(spiralStr)(neatLength+1:end,ib)))
-				mass_ice_avg.(spiralStr)(maxLength,ib) = nansum(mass_ice_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				mass_ice_avg.(spiralStr)(maxLength,ib) = nanmean(mass_ice_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(total_area_orig.(spiralStr)(neatLength+1:end,ib)))
-				total_area_avg.(spiralStr)(maxLength,ib) = nansum(total_area_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				total_area_avg.(spiralStr)(maxLength,ib) = nanmean(total_area_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 			if ~all(isnan(conc_AreaR_orig.(spiralStr)(neatLength+1:end,ib)))
-				conc_AreaR_avg.(spiralStr)(maxLength,ib) = nansum(conc_AreaR_orig.(spiralStr)(neatLength+1:end,ib),1)/leftover;
+				conc_AreaR_avg.(spiralStr)(maxLength,ib) = nanmean(conc_AreaR_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
 
 			for ih = 1:10
 				if ~all(isnan(area_orig.(spiralStr)(neatLength+1:end,ib,ih)))
-					area_avg.(spiralStr)(maxLength,ib,ih) = nansum(area_orig.(spiralStr)(neatLength+1:end,ib,ih),1)/leftover;
+					area_avg.(spiralStr)(maxLength,ib,ih) = nanmean(area_orig.(spiralStr)(neatLength+1:end,ib,ih),1);
 				end
 				if ~all(isnan(sd_habit_orig.(spiralStr)(neatLength+1:end,ib,ih)))
-					sd_habit_avg.(spiralStr)(maxLength,ib,ih) = nansum(sd_habit_orig.(spiralStr)(neatLength+1:end,ib,ih),1)/leftover;
+					sd_habit_avg.(spiralStr)(maxLength,ib,ih) = nanmean(sd_habit_orig.(spiralStr)(neatLength+1:end,ib,ih),1);
 				end
 				if ~all(isnan(sdMass_habit_orig.(spiralStr)(neatLength+1:end,ib,ih)))
-					sdMass_habit_avg.(spiralStr)(maxLength,ib,ih) = nansum(sdMass_habit_orig.(spiralStr)(neatLength+1:end,ib,ih),1)/leftover;
+					sdMass_habit_avg.(spiralStr)(maxLength,ib,ih) = nanmean(sdMass_habit_orig.(spiralStr)(neatLength+1:end,ib,ih),1);
 				end
 			end
 		end
-		
-		
-		%%% Rejected particles
-% 		if calcRej
-% 			rej_area_ratio_avg.(spiralStr)(maxLength) = nansum(rej_area_ratio_orig.(spiralStr)(neatLength+1:end),1)/leftover;
-% 			rej_efct_rad_avg.(spiralStr)(maxLength) = nansum(rej_efct_rad_orig.(spiralStr)(neatLength+1:end),1)/leftover;
-% 			rej_n_avg.(spiralStr)(maxLength) = nansum(rej_n_orig.(spiralStr)(neatLength+1:end),1)/leftover;
-% 
-% 			rej_conc_minR_avg.(spiralStr)(maxLength,:) = nansum(rej_conc_minR_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_mean_perim_avg.(spiralStr)(maxLength,:) = nansum(rej_mean_perim_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_mean_areaRatio_avg.(spiralStr)(maxLength,:) = nansum(rej_mean_areaRatio_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_mean_aspectRatio_elps_avg.(spiralStr)(maxLength,:) = nansum(rej_mean_aspectRatio_elps_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_mean_aspectRatio_rect_avg.(spiralStr)(maxLength,:) = nansum(rej_mean_aspectRatio_rect_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_count_avg.(spiralStr)(maxLength,:) = nansum(rej_count_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_area_calcd_avg.(spiralStr)(maxLength,:) = nansum(rej_area_calcd_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_prec_rate_avg.(spiralStr)(maxLength,:) = nansum(rej_prec_rate_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_termVeloc_avg.(spiralStr)(maxLength,:) = nansum(rej_termVeloc_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_massBL_avg.(spiralStr)(maxLength,:) = nansum(rej_massBL_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_mass_avg.(spiralStr)(maxLength,:) = nansum(rej_mass_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_total_area_avg.(spiralStr)(maxLength,:) = nansum(rej_total_area_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 			rej_conc_AreaR_avg.(spiralStr)(maxLength,:) = nansum(rej_conc_AreaR_orig.(spiralStr)(neatLength+1:end,:),1)/leftover;
-% 
-% 			rej_area_avg.(spiralStr)(maxLength,:,:) = nansum(rej_area_orig.(spiralStr)(neatLength+1:end,:,:),1)/leftover;
-% 			rej_sd_habit_avg.(spiralStr)(maxLength,:,:) = nansum(rej_sd_habit_orig.(spiralStr)(neatLength+1:end,:,:),1)/leftover;
-% 			rej_sdMass_habit_avg.(spiralStr)(maxLength,:,:) = nansum(rej_sdMass_habit_orig.(spiralStr)(neatLength+1:end,:,:),1)/leftover;
-% 		end
 	end
 	
 	
@@ -632,7 +511,7 @@ end
 %% Save output file(s)
 
 clearvars flFile FLstr hhFL i ii iii iiii ix iz jj leftover maxLength mmFL neatLength...
-	num_bins remain sDistFile spiralStr sprlLocs ssFL calcRej botIx startT endT importVars...
+	num_bins remain sDistFile spiralStr sprlLocs ssFL botIx startT endT importVars...
 	mlBotTime 
 	
 save([dataPath 'mp-data/' flight '/sDist/' 'sdistCI.' flight '.' probe '.' num2str(avgTime)	 'secAvg' outFileAppend '.mat']);
