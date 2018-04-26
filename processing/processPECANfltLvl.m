@@ -6,7 +6,7 @@
 
 clear all; close all;
 
-runAll = 1;
+runAll = 0;
 
 if runAll
 	flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
@@ -142,12 +142,27 @@ for iiz=1:length(flights)
 
 	RH_ice = (vp_lw./svp_ice).*100;
 	RH_lw = (vp_lw./svp_lw).*100;
+	
+	
+	% Alternate RH calculation using equations for SVP over water and ice
+	% as given in Huang (2018 JAMC)
+	
+	vp_lw_H18 = exp(34.494 - (4924.99./(TD+237.1)))./((TD+105).^1.57);
+	svp_ice_H18 = exp(43.494 - (6545.8./(TA+278)))./((TA+868).^2);
+	svp_lw_H18 = exp(34.494 - (4924.99./(TA+237.1)))./((TA+105).^1.57);
 
+	RH_ice_H18 = (vp_lw_H18./svp_ice_H18).*100;
+	RH_lw_H18 = (vp_lw_H18./svp_lw_H18).*100;
+	
+	
 	RH_hybrid = zeros(size(Hum_Rel_orig));
+	RH_hybrid_H18 = zeros(size(Hum_Rel_orig));
 	for ix=1:length(RH_hybrid)
 		if TA(ix) <= 0
+			RH_hybrid_H18(ix) = RH_ice_H18(ix);
 			RH_hybrid(ix) = RH_ice(ix);
 		else
+			RH_hybrid_H18(ix) = RH_lw_H18(ix);
 			RH_hybrid(ix) = RH_lw(ix);
 		end
 	end
