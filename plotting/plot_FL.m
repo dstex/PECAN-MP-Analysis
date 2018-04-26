@@ -6,10 +6,10 @@ clearvars; close all;
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
-flight = '20150702';
+flight = '20150709';
 
 saveFigs	= 1;
-noDisp		= 0;
+noDisp		= 1;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
 
@@ -57,10 +57,14 @@ altRangeAll = [1200 7500];
 %% Get flight-specific parameters
 startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
 endT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
-mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
-sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
-
-zoneUndef = (numel(unique(sprlZone)) == 1 && unique(sprlZone) == 'U');
+mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
+mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
+mlBotTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTemp');
+mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
+% mcsStg = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsStg');
+% sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
+% 
+% zoneUndef = (numel(unique(sprlZone)) == 1 && unique(sprlZone) == 'U');
 
 fltLvlFile = ['/Users/danstechman/GoogleDrive/PECAN-Data/FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
@@ -88,20 +92,28 @@ else
 end
 
 %% Sort spirals based on spiral zone and MCS evolution
-tzSprls = find(sprlZone == 'T');
-esrSprls = find(sprlZone == 'S');
-raSprls = find(sprlZone == 'A');
-
-formSprls = find(mcsStg == 'F');
-matureSprls = find(mcsStg == 'M');
-weakSprls = find(mcsStg == 'W');
+% tzSprls = find(sprlZone == 'T');
+% esrSprls = find(sprlZone == 'S');
+% raSprls = find(sprlZone == 'A');
+% 
+% formSprls = find(mcsStg == 'F');
+% matureSprls = find(mcsStg == 'M');
+% weakSprls = find(mcsStg == 'W');
 
 %% Determine data indices for spiral start/end
-startFLix = zeros(length(startT));
-endFLix = zeros(length(startT));
+startFLix = zeros(length(startT),1);
+endFLix = zeros(length(startT),1);
+mlTopIx = NaN(length(startT),1);
+mlBotIx = NaN(length(startT),1);
 for sprl=1:length(startT)
 	startFLix(sprl) = find(time_secs_FL == startT(sprl));
 	endFLix(sprl) = find(time_secs_FL == endT(sprl));
+	if ~isnan(mlTopTime(sprl))
+		mlTopIx(sprl) = find(time_secs_FL == mlTopTime(sprl));
+	end
+	if ~isnan(mlBotTime(sprl))
+		mlBotIx(sprl) = find(time_secs_FL == mlBotTime(sprl));
+	end
 end
 
 %% Create output directories
@@ -133,18 +145,17 @@ if plotTempRHAlt
 	j = 1; % Only used if showMarkers is True
 	for ix = loopVctr
 		if saveFigs && noDisp
-            figure('visible','off','Position', [10,10,1500,1500]);
+            figure('visible','off','Position', [10,10,1200,1200]);
 		else
-            figure('Position', [10,10,1500,1500]);
+            figure('Position', [10,10,1200,1200]);
 		end
 		
 		TAtmp = TA(startFLix(ix):endFLix(ix));
 		AltTmp = Alt(startFLix(ix):endFLix(ix));
 		RHtmp = RH_hybrid(startFLix(ix):endFLix(ix));
-% 		RHtmp = Hum_Rel_orig(startFLix(ix):endFLix(ix));
 		
         [hAx,hTemp,hRH] = plotxx(TAtmp,AltTmp,RHtmp,AltTmp,...
-            {'Temperature (deg C)','Relative Humidity (%)'},{'Altitude (m MSL)'});
+            {sprintf('Temperature (%cC)', char(176)),'Relative Humidity (%)'},{'Altitude (m MSL)'});
         hTemp.Color = 'r';
         hRH.Color = 'b';
         set(hAx(1),'xlim',tempRangeAll);
@@ -153,15 +164,15 @@ if plotTempRHAlt
         set(hAx(2),'ylim',altRangeAll);
         hAx(1).XColor = 'r';
         hAx(2).XColor = 'b'; 
+		hTemp.LineWidth = 3;
+		hRH.LineWidth = 3;
 
         title([flight ' - Spiral ' num2str(ix) ' - RH & Temp vs. Alt']);
-		if (showMarkers && ~allSpirals)
-			hold(hAx(1),'on')
-			hold(hAx(2),'on')
-		else
-			hold(hAx(1),'on')
-		end
-        plot(hAx(1),[0 0],ylim,'c-'); % Vertical line at 0 deg C
+		hold(hAx(1),'on')
+		hold(hAx(2),'on')
+
+        plot(hAx(1),[0 0],ylim,'r--','LineWidth',1); % Vertical line at 0 deg C
+		plot(hAx(2),[100 100],ylim,'b--','LineWidth',1); % Vertical line at 100% RH
 		if (showMarkers && ~allSpirals)
 			plot(hAx(1),TAtmp(loopFLix(j)),AltTmp(loopFLix(j)),'Marker','o','MarkerFaceColor','black',...
 				'MarkerEdgeColor','black','Markersize',10);
@@ -169,8 +180,31 @@ if plotTempRHAlt
 				'MarkerEdgeColor','black','Markersize',10);
 			j = j+1;
 		end
+		
+		txtLoc = (tempRangeAll(2)-tempRangeAll(1))*0.5;
+		if ~isnan(mlTopIx(ix))
+			plot(hAx(1),tempRangeAll,[1 1]*Alt(mlTopIx(ix)),'k--')
+			topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+			tMT = text(hAx(1),txtLoc,Alt(mlTopIx(ix)),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		end
+		if ~isnan(mlBotIx(ix))
+			plot(hAx(1),tempRangeAll,[1 1]*Alt(mlBotIx(ix)),'k--')
+			botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+			tMB = text(hAx(1),txtLoc,Alt(mlBotIx(ix)),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+		end
+		
         set(gca,'ygrid','on')
         set(findall(gcf,'-property','FontSize'),'FontSize',28)
+		
+		if ~isnan(mlBotIx(ix))
+			set(tMB,'FontSize',14);
+		end
+		if ~isnan(mlTopIx(ix))
+			set(tMT,'FontSize',14);
+		end
+		
+		tightfig(gcf);
+		
 		if saveFigs
             set(gcf,'Units','Inches');
 			pos = get(gcf,'Position');
