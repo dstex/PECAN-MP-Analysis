@@ -3,7 +3,7 @@
 
 clearvars
 
-flight = '20150617';
+flight = '20150709';
 
 probe = 'CIP';
 
@@ -15,7 +15,6 @@ startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
 endT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'endT');
 mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
 
-% outFileAppend = '_Dgt150um';
 outFileAppend = '';
 
 %% Define filenames
@@ -28,19 +27,19 @@ flFile = [dataPath 'FlightLevelData/Processed/' flight '_FltLvl_Processed.mat'];
 
 timehhmmss = nc_varget(sDistFile,'time');
 
-bin_min = nc_varget(sDistFile,'bin_min');
+bin_min = nc_varget(sDistFile,'bin_min'); % All bin_* in mm
 bin_max = nc_varget(sDistFile,'bin_max');
 bin_mid = nc_varget(sDistFile,'bin_mid');
 bin_size = nc_varget(sDistFile,'bin_dD');
 
-conc_minR_all = (nc_varget(sDistFile,'conc_minR'))';
+conc_minR_all = (nc_varget(sDistFile,'conc_minR'))'; % cm-4
 area_all = permute(nc_varget(sDistFile,'area'),[3 2 1]);
 area_calcd_all = (nc_varget(sDistFile,'Calcd_area'))';
 conc_AreaR_all = (nc_varget(sDistFile,'conc_AreaR'))';
 n_all = nc_varget(sDistFile,'n');
 total_area_all = (nc_varget(sDistFile,'total_area'))';
-mass_ice_all = (nc_varget(sDistFile,'mass_ice'))';
-mass_lw_all = (nc_varget(sDistFile,'mass_lw'))';
+mass_ice_all = (nc_varget(sDistFile,'mass_ice'))'; % g cm-4
+mass_lw_all = (nc_varget(sDistFile,'mass_lw'))'; % g cm-4
 massBL_all = (nc_varget(sDistFile,'massBL'))';
 sd_habit_all = permute(nc_varget(sDistFile,'habitsd'),[3 2 1]);
 sdMass_habit_all = permute(nc_varget(sDistFile,'habitmsd'),[3 2 1]);
@@ -65,14 +64,6 @@ time_secs_all = hhmmss2insec(timehhmmss);
 num_bins = length(bin_mid);
 
 
-%% Change 0's to NaNs in terminal velocity and effective radius
-% Old version of sizeDist incorrectly set periods with no particles to 0
-% for these vars, which does not make sense
-efct_rad_all(efct_rad_all == 0) = NaN;
-termVeloc_ice_all(termVeloc_ice_all == 0) = NaN;
-termVeloc_lw_all(termVeloc_lw_all == 0) = NaN;
-
-
 
 %% Import relevant flight-level data
 importVars = {'time_secs_FL','TA','RH_hybrid','Alt'};
@@ -87,15 +78,8 @@ alt_all = tempLoad.(importVars{4});
 
 %% Compute any variables not available in the sDist output
 
-
-for iii=1:length(time_secs_all)
-	% Ice water content
-	iwc_all_a(iii,:)=mass_ice_all(iii,:).*(bin_size')/10; % Multiply by bin size in cm [now g/cm3]
-	
-	% Liquid water content
-	lwc_all_a(iii,:)=mass_lw_all(iii,:).*(bin_size')/10;
-	
-end
+iwc_all_a = mass_ice_all.*(bin_size'/10); % Multiply by bin size in cm [now g/cm3]
+lwc_all_a = mass_lw_all.*(bin_size'/10);
 
 % Determine which times have all NaNs for binned IWC/LWC
 nan_iwc = find(all(isnan(iwc_all_a),2));
@@ -106,7 +90,7 @@ iwc_all(nan_iwc) = NaN; % nansum incorrectly sets sums of all NaNs to 0 - fix th
 
 % Liquid water content
 lwc_all = nansum(lwc_all_a,2)*1e6;
-lwc_all(nan_lwc) = NaN; % nansum incorrectly sets sums of all NaNs to 0 - fix this here
+lwc_all(nan_lwc) = NaN;
 
 %% Determine periods over which to average
 
@@ -189,10 +173,10 @@ for ix=1:length(startT)
 	efct_rad_orig.(spiralStr) = efct_rad_all(sprlLocs);
 	n_orig.(spiralStr) = n_all(sprlLocs);
 	
-	iwc_orig.(spiralStr) = iwc_all(sprlLocs);
+	iwc_orig.(spiralStr) = iwc_all(sprlLocs); % [g m-3]
 	lwc_orig.(spiralStr) = lwc_all(sprlLocs);
 	
-	conc_minR_orig.(spiralStr) = conc_minR_all(sprlLocs,:);
+	conc_minR_orig.(spiralStr) = conc_minR_all(sprlLocs,:); % [cm-4]
 	mean_perim_orig.(spiralStr) = mean_perim_all(sprlLocs,:);
 	mean_areaRatio_orig.(spiralStr) = mean_areaRatio_all(sprlLocs,:);
 	mean_aspectRatio_elps_orig.(spiralStr) = mean_aspectRatio_elps_all(sprlLocs,:);
@@ -205,7 +189,7 @@ for ix=1:length(startT)
 	termVeloc_ice_orig.(spiralStr) = termVeloc_ice_all(sprlLocs,:);
 	termVeloc_lw_orig.(spiralStr) = termVeloc_lw_all(sprlLocs,:);
 	massBL_orig.(spiralStr) = massBL_all(sprlLocs,:);
-	mass_ice_orig.(spiralStr) = mass_ice_all(sprlLocs,:);
+	mass_ice_orig.(spiralStr) = mass_ice_all(sprlLocs,:); %[g cm-4]
 	mass_lw_orig.(spiralStr) = mass_lw_all(sprlLocs,:);
 	total_area_orig.(spiralStr) = total_area_all(sprlLocs,:);
 	conc_AreaR_orig.(spiralStr) = conc_AreaR_all(sprlLocs,:);
@@ -224,11 +208,10 @@ for ix=1:length(startT)
 	% From bottom of spiral up to, but not including the melting layer bottom, define
 	% TWC as LWC, and IWC everywhere else.
 	
-	for ii=1:length(mass_ice_orig.(spiralStr))
-		massIceOrigTmp(ii,:)=mass_ice_orig.(spiralStr)(ii,:).*(bin_size')/10; % [g/cm3]
-		massLwOrigTmp(ii,:)=mass_lw_orig.(spiralStr)(ii,:).*(bin_size')/10; % [g/cm3]
-	end
-	iwcOrigTmp = iwc_orig.(spiralStr)/1e6;
+	massIceOrigTmp = mass_ice_orig.(spiralStr).*(bin_size'/10); % [g cm-3]
+	massLwOrigTmp = mass_lw_orig.(spiralStr).*(bin_size'/10); % [g cm-3]
+
+	iwcOrigTmp = iwc_orig.(spiralStr)/1e6; % back to [g cm-3] as calc_mmd requires this
 	lwcOrigTmp = lwc_orig.(spiralStr)/1e6;
 	
 	Dmm_ice_orig.(spiralStr) = calc_mmd(bin_mid,massIceOrigTmp,iwcOrigTmp); % [mm]
@@ -238,28 +221,31 @@ for ix=1:length(startT)
 	Dmm_lw_orig.(spiralStr)(Dmm_lw_orig.(spiralStr) == 0) = NaN;
 	
 	
-	twc_orig.(spiralStr) = iwc_orig.(spiralStr);
-	Dmm_twc_orig.(spiralStr) = Dmm_ice_orig.(spiralStr);
-	mass_twc_orig.(spiralStr) = mass_ice_orig.(spiralStr);
+	twc_orig.(spiralStr) = iwc_orig.(spiralStr); % [g m-3]
+	Dmm_twc_orig.(spiralStr) = Dmm_ice_orig.(spiralStr); % [mm]
+	mass_twc_orig.(spiralStr) = mass_ice_orig.(spiralStr); % [g cm-4]
 	
 	% If we have defined times/temps for the melting layer bottom of the current spiral,
 	% we redefine TWC/Dmm/Mass_TWC to use liquid water values below the melting layer bottom
 	% (NaN's are specified in the PECAN parameter file variables for periods where a given variable
 	% is currently undefined)
+	ice_flag_orig.(spiralStr) = ones(length(time_secs_orig.(spiralStr)),1); % Boolean array - 1=above/in ML; 0=below ML
 	if ~isnan(mlBotTime(ix))
-		botIx = find(time_secs_orig.(spiralStr) == mlBotTime(ix));
+		[~, botIx] = min(abs(time_secs_orig.(spiralStr) - mlBotTime(ix)));
 		if tempC_orig.(spiralStr)(1) < tempC_orig.(spiralStr)(end) % Spiral down
 			twc_orig.(spiralStr)(botIx+1:end) = lwc_orig.(spiralStr)(botIx+1:end);
 			Dmm_twc_orig.(spiralStr)(botIx+1:end) = Dmm_lw_orig.(spiralStr)(botIx+1:end);
 			mass_twc_orig.(spiralStr)(botIx+1:end,:) = mass_lw_orig.(spiralStr)(botIx+1:end,:);
+			ice_flag_orig.(spiralStr)(botIx+1:end) = 0;
 		else % Spiral up
-			twc_orig.(spiralStr)(1:botIx) = lwc_orig.(spiralStr)(1:botIx);
-			Dmm_twc_orig.(spiralStr)(1:botIx) = Dmm_lw_orig.(spiralStr)(1:botIx);
-			mass_twc_orig.(spiralStr)(1:botIx,:) = mass_lw_orig.(spiralStr)(1:botIx,:);
+			twc_orig.(spiralStr)(1:botIx-1) = lwc_orig.(spiralStr)(1:botIx-1);
+			Dmm_twc_orig.(spiralStr)(1:botIx-1) = Dmm_lw_orig.(spiralStr)(1:botIx-1);
+			mass_twc_orig.(spiralStr)(1:botIx-1,:) = mass_lw_orig.(spiralStr)(1:botIx-1,:);
+			ice_flag_orig.(spiralStr)(1:botIx-1) = 0;
 		end
 	end
 	
-	clearvars massIceOrigTmp massLwOrigTmp
+	clearvars massIceOrigTmp massLwOrigTmp iwcOrigTmp lwcOrigTmp
 	
 	
 	
@@ -344,6 +330,9 @@ for ix=1:length(startT)
 			end
 			if ~all(isnan(mass_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
 				mass_ice_avg.(spiralStr)(i,ib) = nanmean(mass_ice_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
+			end
+			if ~all(isnan(mass_lw_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
+				mass_lw_avg.(spiralStr)(i,ib) = nanmean(mass_lw_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
 			end
 			if ~all(isnan(total_area_orig.(spiralStr)(iz:iz+(avgTime-1),ib)))
 				total_area_avg.(spiralStr)(i,ib) = nanmean(total_area_orig.(spiralStr)(iz:iz+(avgTime-1),ib),1);
@@ -447,6 +436,9 @@ for ix=1:length(startT)
 			if ~all(isnan(mass_ice_orig.(spiralStr)(neatLength+1:end,ib)))
 				mass_ice_avg.(spiralStr)(maxLength,ib) = nanmean(mass_ice_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
+			if ~all(isnan(mass_lw_orig.(spiralStr)(neatLength+1:end,ib)))
+				mass_lw_avg.(spiralStr)(maxLength,ib) = nanmean(mass_lw_orig.(spiralStr)(neatLength+1:end,ib),1);
+			end
 			if ~all(isnan(total_area_orig.(spiralStr)(neatLength+1:end,ib)))
 				total_area_avg.(spiralStr)(maxLength,ib) = nanmean(total_area_orig.(spiralStr)(neatLength+1:end,ib),1);
 			end
@@ -468,12 +460,12 @@ for ix=1:length(startT)
 		end
 	end
 	
-	
-	for iiii=1:size(mass_ice_avg.(spiralStr),1)
-		massIceAvgTmp(iiii,:)=mass_ice_avg.(spiralStr)(iiii,:).*(bin_size')/10; % [g/cm3]
-		massLwAvgTmp(iiii,:)=mass_lw_avg.(spiralStr)(iiii,:).*(bin_size')/10; % [g/cm3]
-	end
-	iwcAvgTmp = iwc_avg.(spiralStr)/1e6;
+
+
+	massIceAvgTmp = mass_ice_avg.(spiralStr).*(bin_size'/10); % [g cm-3]
+	massLwAvgTmp = mass_lw_avg.(spiralStr).*(bin_size'/10); % [g cm-3]
+
+	iwcAvgTmp = iwc_avg.(spiralStr)/1e6; % back to [g cm-3] as calc_mmd requires this
 	lwcAvgTmp = lwc_avg.(spiralStr)/1e6;
 	
 	Dmm_ice_avg.(spiralStr) = calc_mmd(bin_mid,massIceAvgTmp,iwcAvgTmp); % [mm]
@@ -482,37 +474,39 @@ for ix=1:length(startT)
 	Dmm_lw_avg.(spiralStr)(Dmm_lw_avg.(spiralStr) == 0) = NaN;
 	
 	
-	twc_avg.(spiralStr) = iwc_avg.(spiralStr);
-	Dmm_twc_avg.(spiralStr) = Dmm_ice_avg.(spiralStr);
-	mass_twc_avg.(spiralStr) = mass_ice_avg.(spiralStr);
+	twc_avg.(spiralStr) = iwc_avg.(spiralStr); % [g m-3]
+	Dmm_twc_avg.(spiralStr) = Dmm_ice_avg.(spiralStr); % [mm]
+	mass_twc_avg.(spiralStr) = mass_ice_avg.(spiralStr); % [g cm-4]
 	
 	% If we have defined times/temps for the melting layer bottom of the current spiral,
 	% we redefine TWC/Dmm/Mass_TWC to use liquid water values below the melting layer bottom
 	% (NaN's are specified in the PECAN parameter file variables for periods where a given variable
 	% is currently undefined)
+	ice_flag_avg.(spiralStr) = ones(length(time_secs_avg.(spiralStr)),1); % Boolean array - 1=above/in ML; 0=below ML
 	if ~isnan(mlBotTime(ix))
-		botIx = find(time_secs_avg.(spiralStr) == mlBotTime(ix));
+		[~, botIx] = min(abs(time_secs_avg.(spiralStr) - mlBotTime(ix)));
 		if tempC_avg.(spiralStr)(1) < tempC_avg.(spiralStr)(end) % Spiral down
 			twc_avg.(spiralStr)(botIx+1:end) = lwc_avg.(spiralStr)(botIx+1:end);
 			Dmm_twc_avg.(spiralStr)(botIx+1:end) = Dmm_lw_avg.(spiralStr)(botIx+1:end);
 			mass_twc_avg.(spiralStr)(botIx+1:end,:) = mass_lw_avg.(spiralStr)(botIx+1:end,:);
+			ice_flag_avg.(spiralStr)(botIx+1:end) = 0;
 		else % Spiral up
 			twc_avg.(spiralStr)(1:botIx-1) = lwc_avg.(spiralStr)(1:botIx-1);
 			Dmm_twc_avg.(spiralStr)(1:botIx-1) = Dmm_lw_avg.(spiralStr)(1:botIx-1);
 			mass_twc_avg.(spiralStr)(1:botIx-1,:) = mass_lw_avg.(spiralStr)(1:botIx-1,:);
+			ice_flag_avg.(spiralStr)(1:botIx-1) = 0;
 		end
 	end
 	
-	clearvars massIceAvgTmp massLwAvgTmp
+	clearvars massIceAvgTmp massLwAvgTmp iwcAvgTmp lwcAvgTmp
 	
 end
 
 
 %% Save output file(s)
 
-clearvars flFile FLstr hhFL i ii iii iiii ix iz jj leftover maxLength mmFL neatLength...
-	num_bins remain sDistFile spiralStr sprlLocs ssFL botIx startT endT importVars...
-	mlBotTime 
+clearvars flFile FLstr hhFL i ii iii iiii ix iz jj ib ih leftover maxLength mmFL neatLength...
+	num_bins remain sDistFile spiralStr sprlLocs sprlLocs_FL ssFL botIx startT endT importVars...
+	mlBotTime tempLoad nan_iwc nan_lwc
 	
 save([dataPath 'mp-data/' flight '/sDist/' 'sdistCI.' flight '.' probe '.' num2str(avgTime)	 'secAvg' outFileAppend '.mat']);
-% save([dataPath 'mp-data/' flight '/sDist_matchBins/' 'sdistCI.' flight '.' probe '.' num2str(avgTime)	 'secAvg' outFileAppend '.mat']);
