@@ -1,15 +1,17 @@
 function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_div, moments, displayStat)
 	% IGF fitting routine.
 	% Created by Shichu 10/29/2016
+	% Modified by Dan Stechman 04/23/2018
 	% Input:
-	%   psd -> particle size distribution (preferrably in 1/L/um)
+	%   psd -> particle size distribution with units of (1/L/um) or (1/cm4) or anything else as 
+	%			long as its bin-normalizing unit is consistent with units of bin_div
 	%   bin_div -> EDGES of each size bin. Length should be length(psd)+1
 	%       i.e. [bin1_min, bin1_max, bin2_max, ... , binLast_min, binLast_max]
-	%       unit in um
+	%       units of (um) or (cm) or anything else consistent with bin-normalizing unit of psd
 	%   moments -> specify at least 3 moments to fit to. eg. [0 2 3]
 	% Output:
 	%   nml -> [ log10(N0), mu, lambda ]
-	%       unit N0 in 1/L/um, mu unitless, lambda 1/um
+	%       units: N0=[1/L/um] or [1/cm4], mu=[unitless], lambda=[1/um] or [1/cm]
 	%       Fitted psd(D) = N0 x D^mu x exp(-lambda D)
 	%   mobs -> the moments of the input psd
 	%   mfit -> the moments of the fitted gamma psd
@@ -19,7 +21,6 @@ function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_di
 	%   output -> detailed fitting output from matlab fit function
 	%   For flag and output, see matlab fminsearch function docu for details
 	%   https://www.mathworks.com/help/matlab/ref/fminsearch.html
-	% Last edited by Shichu 10/29/2016
 	
 	% To modify this for the exponential fit, we only need N0 and lambda params
 	% Will also need to modify the my_gamma function to be the actual exponential 
@@ -35,13 +36,13 @@ function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_di
 	x00 = [log10(300) -1 0.0014];
 	
 	bin_diff = diff(bin_div);   % bin width
-	bin_mid = (bin_div(1:end-1)+bin_div(2:end))/2;  % bin mid size
+	bin_mid = (bin_div(1:end-1)+bin_div(2:end))/2;  % bin mid diameter
 	
 	mobs = zeros(size(moments));
 	mfit = zeros(size(moments));
 	
 	for szmoment = 1:size(moments,2)
-		mobs(szmoment) = sum( psd.*bin_diff.*bin_mid.^moments(szmoment) );
+		mobs(szmoment) = nansum( psd.*bin_diff.*bin_mid.^moments(szmoment) );
 	end
 	
 	if displayStat
@@ -68,7 +69,7 @@ function [nml, mobs, mfit, chisquare, psdfit, flag, output] = igfFit(psd, bin_di
 	[nml, chisquare, flag, output] = fminsearch(f_fit, x00, option2);
 	psdfit = f_mygamma(nml,bin_mid);
 	for szmoment=1:size(mfit,2)
-		mfit(szmoment) = sum(psdfit.*bin_diff.*bin_mid.^(moments(szmoment)));
+		mfit(szmoment) = nansum(psdfit.*bin_diff.*bin_mid.^(moments(szmoment)));
 	end
 	
 end
@@ -86,12 +87,16 @@ function [ chisquare ] = f_sum_chisquare( nml, moments, bin_mid, bin_diff, mobs)
 	mfit = zeros(size(mobs));
 	
 	for szmoment = 1:size(mfit,2)
-		mfit(szmoment) = sum( f_mygamma(nml, bin_mid).*bin_diff.*bin_mid.^(moments(szmoment)) );
+		mfit(szmoment) = nansum( f_mygamma(nml, bin_mid).*bin_diff.*bin_mid.^(moments(szmoment)) );
 		%    int_f=@(x) f_mygamma(nml,x).*x.^(moments(szmoment));
 		%    mfit(szmoment)=integral(int_f,xmin,xmax);
 	end
 	
-	chisquare = sum( (mfit-mobs).^2./mobs./mfit );
+	% First (commented expression) is equivalent to the second
+	% The second was added as it exactly reflects the expression in McFarquhar et al. (2015) and
+	% is far clearer in what is being done
+	% chisquare = nansum( (mfit-mobs).^2./mobs./mfit );
+	chisquare = nansum( ((mobs-mfit)./sqrt(mobs.*mfit)).^2 );
 	
 end
 

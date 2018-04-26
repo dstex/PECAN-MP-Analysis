@@ -4,7 +4,7 @@
 clearvars;
 
 
-flight = '20150617';
+flight = '20150709';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
@@ -269,7 +269,7 @@ for ix = 1:length(sprlNames)
 	eval(['nc' sprlNames{ix} '.Variables(18).FillValue = NaN;']);
 	
 	erA10(1).Name = 'Units';
-	erA10(1).Value = 'mm';
+	erA10(1).Value = 'um';
 	erA10(2).Name = 'Description';
 	erA10(2).Value = 'Effective radius - 10 sec average';
 	eval(['nc' sprlNames{ix} '.Variables(19).Name = ''efctvRadius_10s'';']);
