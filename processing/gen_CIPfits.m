@@ -1,20 +1,29 @@
 clearvars
 
 %% Specify various plotting/calculation parameters
-flight = '20150709';
+flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
+% flights = {'20150709'};
 
 avgTime = 10;
 
-extnd12cm = 1; %1.2cm
-extnd55cm = 0; %5.5cm
+extnd12mm = 1; %12mm
+extnd55mm = 0; %55mm
 
 numValid = 17; % Required number of bins with valid data needed for given SD to be fit
 
-if extnd12cm
-	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
+if extnd12mm
+	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_12mm'];
+	statStr = '12 mm';
+	pip_prtlBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
+		4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0 ...
+		7800.0	8300.0	8800.0	9500.0	12000.0]/1000; % [mm]
 end
-if extnd55cm
-	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_5cm'];
+if extnd55mm
+	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_55mm'];
+	statStr = '55 mm';
+	pip_prtlBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
+		4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0 ...
+		8000.0:1000.0:20000.0 22000.0:2000.0:36000.0 40000.0 45000.0 50000.0 55000.0]/1000; % [mm]
 end
 
 % Check ratio of TWC from the extended portion of the PSD to that from the observed portion
@@ -24,266 +33,144 @@ twcRatioThresh = 7.0;
 
 cipIncld = 8:34; % Bins to use in fitting
 
-doEvryTStp	= 1;
-doSprl		= 0;
-% doTempBins	= 0;
-
-
 saveMat	= 1;
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
 
 % Brown and Francis 1995 coefficients
-% Using adjustment factor of 1.53 for the published value of 'a' (0.00294), 
+% Using adjustment factor of 1.53 for the published value of 'a' (0.00294),
 % as proposed by Hogan et al. (2012) to account for the fact that
 % BF95 used Dmean and not Dmax as we did for PECAN
 a = 0.00192; % g cm^-b
 b = 1.9;
 
-diary([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.log'])
+initialVars = who;
+initialVars{end+1} = 'initialVars';
+initialVars{end+1} = 'iFlt';
 
-%% Load in CIP SD file and then extract only the variables we need from it
-if avgTime == 1 || avgTime == 10
-	cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
-elseif avgTime == 5
-	cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.5secAvg.mat']);
-end
-
-if avgTime == 1
-	cip_concMinR = cipDataF.conc_minR_orig; % [cm-4]
-	cip_massTWC = cipDataF.mass_twc_orig; % [g cm-4]
-	cip_timeSecs = cipDataF.time_secs_orig;
-	iceFlag = cipDataF.ice_flag_orig;
-else
-	cip_concMinR = cipDataF.conc_minR_avg; % [cm-4]
-	cip_massTWC = cipDataF.mass_twc_avg; % [g cm-4]
-	cip_timeSecs = cipDataF.time_secs_avg;
-	iceFlag = cipDataF.ice_flag_avg;
-end
-cip_binMin = (cipDataF.bin_min)./10; % convert mm to cm
-cip_binMax = (cipDataF.bin_max)./10;
-cip_binMid = (cipDataF.bin_mid)./10;
-cip_binEdges = [cip_binMin; cip_binMax(end)]; 
-
-
-%% Load in various PECAN parameters
-mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
-mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
-mlBotTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTemp');
-mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
-
-%% Create array of extended CIP bins
-% Get increment between bin mids for CIP and then create an extended bin mids array
-% spanning from the beginning of the CIP bins to the end of the PIP bins
-
-if extnd12cm
-	pip_prtlBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
-		4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0 ...
-		7800.0	8300.0	8800.0	9500.0	12000.0]/10000; % [cm]
-end
-
-if extnd55cm
-	pip_prtlBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
-		4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0 ...
-		8000.0:1000.0:20000.0 22000.0:2000.0:36000.0 40000.0 45000.0 50000.0 55000.0]/10000; % [cm]
-end
-
-cipExt_binEdges = [cip_binEdges; pip_prtlBinEdges']; % all cipExt_bin* are [cm]
-cipExt_binMin = cipExt_binEdges(1:end-1);
-cipExt_binMax = cipExt_binEdges(2:end);
-cipExt_binMid = (cipExt_binMin+cipExt_binMax)/2;
-cipExt_binwidth = diff(cipExt_binEdges); 
-numExt_bins = length(cipExt_binMid);
-
-sprlNames = fieldnames(cip_concMinR); % Variable used unimportant - just needs to be one of the structs
-
-
-loopVctr = 1:length(sprlNames);
-% loopVctr = 2;
-
-%% Run the fitting analyses
-for ix = loopVctr
-	cipConc = cip_concMinR.(sprlNames{ix}); % [cm-4]
-	cipConcSprl = nanmean(cip_concMinR.(sprlNames{ix}),1);
-	cipMass = cip_massTWC.(sprlNames{ix}); % [g cm-4]
-	cipMassSprl = nanmean(cip_massTWC.(sprlNames{ix}),1);
-	iceFlg = iceFlag.(sprlNames{ix});
+for iFlt = 1:length(flights)
+	flight = flights{iFlt};
+	fprintf('\nExtending %s PSDs to %s...\n',flight,statStr);
+	diaryF = [dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.log'];
+	if (exist(diaryF, 'file') == 2)
+		delete(diaryF);
+	end
+	diary(diaryF)
 	
-	%% Calculate fits of spiral-averaged SDs
-	if doSprl
-		fprintf('\nFitting Spiral-Averaged SD - Spiral %d\n',ix);
-		cipConc_ext_igfWhl.(sprlNames{ix}) = NaN(1,numExt_bins);
-		cipConc_hybrid_igfWhl.(sprlNames{ix}) = NaN(1,numExt_bins);
-		cipMass_ext_igfWhl.(sprlNames{ix}) = NaN(1,numExt_bins);
-		cipMass_hybrid_igfWhl.(sprlNames{ix}) = NaN(1,numExt_bins);
-		
-		[cip_igf_nmlWhl.(sprlNames{ix}), cip_igf_mmtsObsWhl.(sprlNames{ix}), cip_igf_mmtsFitWhl.(sprlNames{ix}),...
-			cip_igf_chisquareWhl.(sprlNames{ix}), cipObs_igf_fitWhl.(sprlNames{ix}), cip_igf_fitFlagWhl.(sprlNames{ix}),...
-			cip_igf_fitDetailsWhl] = igfFit(cipConcSprl(cipIncld), cip_binEdges(cipIncld(1):cipIncld(end)+1)', [0 2 3], 0);
-		
-		n0_tmp = cip_igf_nmlWhl.(sprlNames{ix})(1);
-		mu_tmp = cip_igf_nmlWhl.(sprlNames{ix})(2);
-		lmda_tmp = cip_igf_nmlWhl.(sprlNames{ix})(3);
-		
-		cipConc_hybrid_igfWhl.(sprlNames{ix})(1:length(cip_binMid)) = cipConcSprl;
-		cipConc_hybrid_igfWhl.(sprlNames{ix})(length(cip_binMid)+1:end) = ...
-			10^n0_tmp.*cipExt_binMid(length(cip_binMid)+1:end).^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid(length(cip_binMid)+1:end));
-		cipConc_ext_igfWhl.(sprlNames{ix}) = 10^n0_tmp.*cipExt_binMid.^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid);
-		
-		% Calculate extended distribution of average mass_twc over whole spiral, assuming Brown and Francis (using Dmax in cm)
-		cipMass_hybrid_igfWhl.(sprlNames{ix})(1:length(cip_binMid)) = cipMassSprl; % g cm-4
-		cipMass_hybrid_igfWhl.(sprlNames{ix})(length(cip_binMid)+1:end) = ...
-			(a.*cipExt_binMid(length(cip_binMid)+1:end).^b)' .* (cipConc_hybrid_igfWhl.(sprlNames{ix})(length(cip_binMid)+1:end));
-		cipMass_ext_igfWhl.(sprlNames{ix}) = (a.*cipExt_binMid.^b) .* cipConc_ext_igfWhl.(sprlNames{ix});
-		
-		% Calculate TWC for extended distribution
-		cipTWC_hybrid_igfWhl.(sprlNames{ix}) = nansum((cipMass_hybrid_igfWhl.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		cipTWC_ext_igfWhl.(sprlNames{ix}) = nansum((cipMass_ext_igfWhl.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		
-		% Calculate total number concentration for extended distribution
-		cipNt_hybrid_igfWhl.(sprlNames{ix}) = nansum(cipConc_hybrid_igfWhl.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		cipNt_ext_igfWhl.(sprlNames{ix}) = nansum(cipConc_ext_igfWhl.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		
-		% Calculate median mass diameter
-		cipDmm_hybrid_igfWhl.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_hybrid_igfWhl.(sprlNames{ix}).*cipExt_binwidth',cipTWC_hybrid_igfWhl.(sprlNames{ix})./1e6); % cm
-		cipDmm_ext_igfWhl.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_ext_igfWhl.(sprlNames{ix}).*cipExt_binwidth',cipTWC_ext_igfWhl.(sprlNames{ix})./1e6);
+	%% Load in CIP SD file and then extract only the variables we need from it
+	if avgTime == 1 || avgTime == 10
+		cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat']);
+	elseif avgTime == 5
+		cipDataF = load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.5secAvg.mat']);
 	end
 	
-	%% Calculate fits of temperature-binned SDs (currently unused)
-	% MUST bring up to date following "every time step" section below if used in future
-	%{
-	if doTempBins
-		fprintf('\nFitting Temperature-Binned SDs - Spiral %d\n',ix);
-		tempCrnd.(sprlNames{ix}) = NaN(length(tempC_sprlOrig),1);
-		for ii=1:length(tempC_sprlOrig)
-			if tempC_sprlOrig(ii) < 0
-				tempCrnd.(sprlNames{ix})(ii) = ceil(tempC_sprlOrig(ii));
-			elseif tempC_sprlOrig(ii) > 0
-				tempCrnd.(sprlNames{ix})(ii) = floor(tempC_sprlOrig(ii));
-			end
-		end
-		
-		tempBinsAll.(sprlNames{ix}) = min(tempCrnd.(sprlNames{ix})):max(tempCrnd.(sprlNames{ix}));
-		tempBins = tempBinsAll.(sprlNames{ix});
-		
-		if doIGF
-			cipConc_ext_igfTb.(sprlNames{ix}) = NaN(length(tempBins),numExt_bins); % N(D) using only the IGF as a basis
-			cipConc_hybrid_igfTb.(sprlNames{ix}) = NaN(length(tempBins),numExt_bins); % Will contain observed CIP data, with IGF values beyond D=2mm
-			cipMass_ext_igfTb.(sprlNames{ix}) = NaN(length(tempBins),numExt_bins);
-			cipMass_hybrid_igfTb.(sprlNames{ix}) = NaN(length(tempBins),numExt_bins);
-		end
-		
-		fitSkipTmp.(sprlNames{ix}) = [];
-		negLmdaTmp.(sprlNames{ix}) = [];
-		for tmp = 1:length(tempBins)
-			cipObsConc = nanmean(cipConc(tempCrnd.(sprlNames{ix}) == tempBins(tmp),:),1);
-			cipObsMass = nanmean(cipMass(tempCrnd.(sprlNames{ix}) == tempBins(tmp),:),1);
-			fprintf('\tFitting %d C (MaxT = %d C)\n',tempBins(tmp),tempBins(end))
-			
-			if (all(isnan(cipObsConc)) || length(find(cipObsConc > 0)) < numValid)
-				fprintf('\t\tInsufficient data\n')
-				cip_igf_nmlTb.(sprlNames{ix})(tmp,:) = [NaN,NaN,NaN];
-				cip_igf_mmtsObsTb.(sprlNames{ix})(tmp,:) = [NaN,NaN,NaN];
-				cip_igf_mmtsFitTb.(sprlNames{ix})(tmp,:) = [NaN,NaN,NaN];
-				cip_igf_chisquareTb.(sprlNames{ix})(tmp) = NaN;
-				cipObs_igf_fitTb.(sprlNames{ix})(tmp,:) = NaN(1,size(cipObsConc(cipIncld),2));
-				cip_igf_fitFlagTb.(sprlNames{ix})(tmp) = NaN;
-				
-				fitSkipTmp.(sprlNames{ix}) = [fitSkipTmp.(sprlNames{ix}); tmp]; %Temperature bin indices with too few valid points in SD
-			else
-				[cip_igf_nmlTb.(sprlNames{ix})(tmp,:), cip_igf_mmtsObsTb.(sprlNames{ix})(tmp,:), cip_igf_mmtsFitTb.(sprlNames{ix})(tmp,:),...
-					cip_igf_chisquareTb.(sprlNames{ix})(tmp), cipObs_igf_fitTb.(sprlNames{ix})(tmp,:),...
-					cip_igf_fitFlagTb.(sprlNames{ix})(tmp), cip_igf_fitDetails] = igfFit(cipObsConc(cipIncld), cip_binEdges(cipIncld(1):cipIncld(end)+1)', [0 2 3], 0);
-			end
-			
-			n0_tmp = cip_igf_nmlTb.(sprlNames{ix})(tmp,1);
-			mu_tmp = cip_igf_nmlTb.(sprlNames{ix})(tmp,2);
-			lmda_tmp = cip_igf_nmlTb.(sprlNames{ix})(tmp,3);
-			
-			% We want to create the extended distributions if lambda is positive or NaN (NaN yields the obs PSD with NaNs
-			% in the extended size range
-			if lmda_tmp > 0 || isnan(lmda_tmp)
-				cipConc_hybrid_igfTb.(sprlNames{ix})(tmp,1:length(cip_binMid)) = cipObsConc;
-				cipConc_hybrid_igfTb.(sprlNames{ix})(tmp,length(cip_binMid)+1:end) = ...
-					10^n0_tmp.*cipExt_binMid(length(cip_binMid)+1:end).^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid(length(cip_binMid)+1:end));
-				
-				cipConc_ext_igfTb.(sprlNames{ix})(tmp,:) = 10^n0_tmp.*cipExt_binMid.^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid);
-				
-				cipMass_hybrid_igfTb.(sprlNames{ix})(tmp,1:length(cip_binMid)) = cipObsMass;
-				
-				if tempBins(tmp) > mlBotTemp(ix) % below melting layer - assume liquid water spheres
-					cipMass_hybrid_igfTb.(sprlNames{ix})(tmp,length(cip_binMid)+1:end) = ...
-						((pi/6).*cipExt_binMid(length(cip_binMid)+1:end).^3)' .* (cipConc_hybrid_igfTb.(sprlNames{ix})(tmp,length(cip_binMid)+1:end));
-					cipMass_ext_igfTb.(sprlNames{ix})(tmp,:) = ((pi/6).*cipExt_binMid.^3)' .* cipConc_ext_igfTb.(sprlNames{ix})(tmp,:);
-				else % above melting layer - assume ice
-					cipMass_hybrid_igfTb.(sprlNames{ix})(tmp,length(cip_binMid)+1:end) = ...
-						(a.*cipExt_binMid(length(cip_binMid)+1:end).^b)' .* (cipConc_hybrid_igfTb.(sprlNames{ix})(tmp,length(cip_binMid)+1:end));
-					cipMass_ext_igfTb.(sprlNames{ix})(tmp,:) = (a.*cipExt_binMid.^b)' .* cipConc_ext_igfTb.(sprlNames{ix})(tmp,:);
-				end
-				
-			else
-				fprintf('\t\tLambda < 0 - Skipping iteration\n')
-				negLmdaTmp.(sprlNames{ix}) = [negLmdaTmp.(sprlNames{ix}); tmp]; %Indices of temps with negative lambda values
-			end
-			
-			
-		end
-
-		% Calculate TWC for extended distribution
-		cipTWC_hybrid_igfTb.(sprlNames{ix}) = nansum((cipMass_hybrid_igfTb.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		cipTWC_ext_igfTb.(sprlNames{ix}) = nansum((cipMass_ext_igfTb.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		
-		% Calculate total number concentration for extended distribution
-		cipNt_hybrid_igfTb.(sprlNames{ix}) = nansum(cipConc_hybrid_igfTb.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		cipNt_ext_igfTb.(sprlNames{ix}) = nansum(cipConc_ext_igfTb.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		
-		% Calculate median mass diameter
-		cipDmm_hybrid_igfTb.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_hybrid_igfTb.(sprlNames{ix}).*cipExt_binwidth',cipTWC_hybrid_igfTb.(sprlNames{ix})./1e6); % cm
-		cipDmm_ext_igfTb.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_ext_igfTb.(sprlNames{ix}).*cipExt_binwidth',cipTWC_ext_igfTb.(sprlNames{ix})./1e6);
-		
-		
-		fitSkipTmpRatio.(sprlNames{ix}) = length(fitSkipTmp.(sprlNames{ix}))/length(tempBins);
-		fprintf('\t***Fitting skipped %d/%d times due to insufficient data\n\t***Lambda < 0 %d/%d times\n',...
-			length(fitSkipTmp.(sprlNames{ix})),length(tempBins),length(negLmdaTmp.(sprlNames{ix})),length(tempBins))
+	if avgTime == 1
+		cip_concMinR_cm4 = cipDataF.conc_minR_cm4_orig; % [cm-4]
+		cip_massTWC_gcm4 = cipDataF.mass_twc_gcm4_orig; % [g cm-4]
+		cip_massIWC_gcm4 = cipDataF.mass_ice_gcm4_orig; % [g cm-4]
+		cip_massLWC_gcm4 = cipDataF.mass_lw_gcm4_orig; % [g cm-4]
+		cip_timeSecs = cipDataF.time_secs_orig;
+		iceFlag = cipDataF.ice_flag_orig;
+		sprlMeanAR_lw = cipDataF.sprlMeanAspR_lw_orig;
+	else
+		cip_concMinR_cm4 = cipDataF.conc_minR_cm4_avg; % [cm-4]
+		cip_massTWC_gcm4 = cipDataF.mass_twc_gcm4_avg; % [g cm-4]
+		cip_massIWC_gcm4 = cipDataF.mass_ice_gcm4_avg; % [g cm-4]
+		cip_massLWC_gcm4 = cipDataF.mass_lw_gcm4_avg; % [g cm-4]
+		cip_timeSecs = cipDataF.time_secs_avg;
+		iceFlag = cipDataF.ice_flag_avg;
+		sprlMeanAR_lw = cipDataF.sprlMeanAspR_lw_avg;
 	end
-	%}
+	cip_binMin_mm = cipDataF.bin_min_mm; % mm
+	cip_binMax_mm = cipDataF.bin_max_mm;
+	cip_binMid_mm = cipDataF.bin_mid_mm;
+	cip_binEdges_mm = [cip_binMin_mm; cip_binMax_mm(end)];
 	
-	%% Calculate fits for every time step (dependent on averaging time selected)
-	if doEvryTStp
+	cip_binMin_cm = cip_binMin_mm./10;
+	cip_binMax_cm = cip_binMax_mm./10;
+	cip_binMid_cm = cip_binMid_mm./10;
+	cip_binEdges_cm = cip_binEdges_mm./10;
+	
+	numObs_bins = length(cip_binMid_cm);
+	
+	
+	%% Load in various PECAN parameters
+	mlBotTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTime');
+	mlTopTime = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTime');
+	mlBotTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlBotTemp');
+	mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
+	
+	%% Create array of extended CIP bins
+	% Get increment between bin mids for CIP and then create an extended bin mids array
+	% spanning from the beginning of the CIP bins to the end of the PIP bins
+	
+	cipExt_binEdges_mm = [cip_binEdges_mm; pip_prtlBinEdges'];
+	cipExt_binMin_mm = cipExt_binEdges_mm(1:end-1);
+	cipExt_binMax_mm = cipExt_binEdges_mm(2:end);
+	cipExt_binMid_mm = (cipExt_binMin_mm+cipExt_binMax_mm)/2;
+	cipExt_binwidth_mm = diff(cipExt_binEdges_mm);
+	
+	cipExt_binEdges_cm = cipExt_binEdges_mm./10;
+	cipExt_binMin_cm = cipExt_binMin_mm./10;
+	cipExt_binMax_cm = cipExt_binMax_mm./10;
+	cipExt_binMid_cm = cipExt_binMid_mm./10;
+	cipExt_binwidth_cm = cipExt_binwidth_mm./10;
+	
+	numExt_bins = length(cipExt_binMid_cm);
+	
+	sprlNames = fieldnames(cip_concMinR_cm4); % Variable used unimportant - just needs to be one of the structs
+	
+	
+	loopVctr = 1:length(sprlNames);
+	% loopVctr = 2;
+	
+	%% Run the fitting analyses
+	for ix = loopVctr
+		cipConc_cm4 = cip_concMinR_cm4.(sprlNames{ix}); % [cm-4]
+		cipMassTWC_gcm4 = cip_massTWC_gcm4.(sprlNames{ix}); % [g cm-4]
+		cipMassIWC_gcm4 = cip_massIWC_gcm4.(sprlNames{ix}); % [g cm-4]
+		cipMassLWC_gcm4 = cip_massLWC_gcm4.(sprlNames{ix}); % [g cm-4]
+		iceFlg = iceFlag.(sprlNames{ix});
+		
+		sprlLen = size(cipConc_cm4,1);
+		
 		fprintf('\nFitting Individual %d-sec SDs - Spiral %d\n',avgTime,ix);
-
-		cipConc_ext_igf.(sprlNames{ix}) = NaN(size(cipConc,1),numExt_bins); % N(D) using only the IGF as a basis
-		cipConc_hybrid_igf.(sprlNames{ix}) = NaN(size(cipConc,1),numExt_bins); % Will contain observed CIP data, with IGF values beyond D=2mm
-		cipMass_ext_igf.(sprlNames{ix}) = NaN(size(cipMass,1),numExt_bins);
-		cipMass_hybrid_igf.(sprlNames{ix}) = NaN(size(cipMass,1),numExt_bins);
-		twcRatio.(sprlNames{ix}) = NaN(size(cipMass,1),1);
 		
+		cipConc_cm4_ext_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins); % N(D) using only the IGF as a basis
+		cipConc_cm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins); % Will contain observed CIP data, with IGF values beyond D=2mm
+		cipMass_gcm4_ext_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+		cipMass_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+		cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+		cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+		twcRatio.(sprlNames{ix}) = NaN(sprlLen,1);
 		
 		fitSkipIx.(sprlNames{ix}) = [];
 		lowLmdaIx.(sprlNames{ix}) = [];
 		twcRatioExcdIx.(sprlNames{ix}) = [];
 		
-		for time = 1:size(cipConc,1)
-			fprintf('\tFitting %d/%d\n',time,size(cipConc,1))
-			cipObsConc = cipConc(time,:);
-			cipObsMass = cipMass(time,:);
+		for time = 1:size(cipConc_cm4,1)
+			fprintf('\tFitting %d/%d\n',time,sprlLen)
+			cipObsConc_cm4 = cipConc_cm4(time,:);
+			cipObsMassTWC_gcm4 = cipMassTWC_gcm4(time,:);
+			cipObsMassIWC_gcm4 = cipMassIWC_gcm4(time,:);
+			cipObsMassLWC_gcm4 = cipMassLWC_gcm4(time,:);
 			
 			
-			if (all(isnan(cipObsConc)) || length(find(cipObsConc > 0)) < numValid)
+			if (all(isnan(cipObsConc_cm4)) || length(find(cipObsConc_cm4 > 0)) < numValid)
 				fprintf('\t\tInsufficient data\n')
 				cip_igf_nml.(sprlNames{ix})(time,:) = [NaN,NaN,NaN];
 				cip_igf_mmtsObs.(sprlNames{ix})(time,:) = [NaN,NaN,NaN];
 				cip_igf_mmtsFit.(sprlNames{ix})(time,:) = [NaN,NaN,NaN];
 				cip_igf_chisquare.(sprlNames{ix})(time) = NaN;
-				cipObs_igf_fit.(sprlNames{ix})(time,:) = NaN(1,size(cipObsConc(cipIncld),2));
+				cipObs_igf_fit.(sprlNames{ix})(time,:) = NaN(1,size(cipObsConc_cm4(cipIncld),2));
 				cip_igf_fitFlag.(sprlNames{ix})(time) = NaN;
 				
 				fitSkipIx.(sprlNames{ix}) = [fitSkipIx.(sprlNames{ix}); time]; %Indices of times with too few valid points in SD
 			else
 				[cip_igf_nml.(sprlNames{ix})(time,:), cip_igf_mmtsObs.(sprlNames{ix})(time,:), cip_igf_mmtsFit.(sprlNames{ix})(time,:),...
 					cip_igf_chisquare.(sprlNames{ix})(time), cipObs_igf_fit.(sprlNames{ix})(time,:),...
-					cip_igf_fitFlag.(sprlNames{ix})(time), cip_igf_fitDetails] = igfFit(cipObsConc(cipIncld), cip_binEdges(cipIncld(1):cipIncld(end)+1)', [0 2 3], 0);
+					cip_igf_fitFlag.(sprlNames{ix})(time), cip_igf_fitDetails] = igfFit(cipObsConc_cm4(cipIncld), cip_binEdges_cm(cipIncld(1):cipIncld(end)+1)', [0 2 3], 0);
 			end
 			
 			n0_tmp = cip_igf_nml.(sprlNames{ix})(time,1);
@@ -302,43 +189,56 @@ for ix = loopVctr
 				lmdaThresh = 0.0;
 			end
 			if lmda_tmp > lmdaThresh || isnan(lmda_tmp)
-				cipConc_hybrid_igf.(sprlNames{ix})(time,1:length(cip_binMid)) = cipObsConc;
-				cipConc_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = ...
-					10^n0_tmp.*cipExt_binMid(length(cip_binMid)+1:end).^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid(length(cip_binMid)+1:end));
-				cipConc_ext_igf.(sprlNames{ix})(time,:) = 10^n0_tmp.*cipExt_binMid.^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid);
+				cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins) = cipObsConc_cm4;
+				cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+					10^n0_tmp.*cipExt_binMid_cm(numObs_bins+1:end).^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid_cm(numObs_bins+1:end));
+				cipConc_cm4_ext_igf.(sprlNames{ix})(time,:) = 10^n0_tmp.*cipExt_binMid_cm.^mu_tmp.*exp(-lmda_tmp.*cipExt_binMid_cm);
 				
-				cipMass_hybrid_igf.(sprlNames{ix})(time,1:length(cip_binMid)) = cipObsMass;
+				cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins) = cipObsMassTWC_gcm4;
+				cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins) = cipObsMassIWC_gcm4;
+				cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins) = cipObsMassLWC_gcm4;
+				
 				if iceFlg(time) % Above/in melting layer - ice
-					cipMass_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = ...
-						(a.*cipExt_binMid(length(cip_binMid)+1:end).^b)' .* (cipConc_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end));
-					cipMass_ext_igf.(sprlNames{ix})(time,:) = (a.*cipExt_binMid.^b)' .* cipConc_ext_igf.(sprlNames{ix})(time,:);
-				else % Below melting layer - assumer liquid water spheres
-					cipMass_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end) = ...
-						((pi/6).*cipExt_binMid(length(cip_binMid)+1:end).^3)' .* (cipConc_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end));
-					cipMass_ext_igf.(sprlNames{ix})(time,:) = ((pi/6).*cipExt_binMid.^3)' .* cipConc_ext_igf.(sprlNames{ix})(time,:);
+					cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+						(a.*cipExt_binMid_cm(numObs_bins+1:end).^b)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end));
+					cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = (a.*cipExt_binMid_cm.^b)' .* cipConc_cm4_ext_igf.(sprlNames{ix})(time,:);
+				else % Below melting layer - assume liquid water spheres
+					cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+						sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm(numObs_bins+1:end).^3)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end)) );
+					cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm.^3)' .* cipConc_cm4_ext_igf.(sprlNames{ix})(time,:) );
 				end
 				
+				cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+					(a.*cipExt_binMid_cm(numObs_bins+1:end).^b)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end));
+				
+				if iceFlg(time) % Use overall average for adjusting LW values in regions of ice (ultimately not used)
+					cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+						0.7.*( ((pi/6).*cipExt_binMid_cm(numObs_bins+1:end).^3)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end)) );
+				else
+					cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
+						sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm(numObs_bins+1:end).^3)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end)) );
+				end
 				
 				% Check to see if total mass in extended portion of PSD exceeds some percentage of the mass in the observed portion
 				% If so, we'll make note of where this occurs and determine if the resultant fits are potentially problematic
 				if chkTWCratio
-					cipTWC_obsOnly = nansum((cipMass_hybrid_igf.(sprlNames{ix})(time,1:length(cip_binMid)).*cipExt_binwidth(1:length(cip_binMid))').*1e6,2);
-					cipTWC_extOnly = nansum((cipMass_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end).*cipExt_binwidth(length(cip_binMid)+1:end)').*1e6,2);
+					cipTWC_obsOnly = nansum((cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins).*cipExt_binwidth_cm(1:numObs_bins)').*1e6,2);
+					cipTWC_extOnly = nansum((cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end).*cipExt_binwidth_cm(numObs_bins+1:end)').*1e6,2);
 					
-					if all(isnan(cipMass_hybrid_igf.(sprlNames{ix})(time,1:length(cip_binMid))))
+					if all(isnan(cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,1:numObs_bins)))
 						cipTWC_obsOnly = NaN;
 					end
-					if all(isnan(cipMass_hybrid_igf.(sprlNames{ix})(time,length(cip_binMid)+1:end)))
+					if all(isnan(cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end)))
 						cipTWC_extOnly = NaN;
 					end
 					
 					twcRatio.(sprlNames{ix})(time) = cipTWC_extOnly/cipTWC_obsOnly;
 					
 					if twcRatio.(sprlNames{ix})(time) > twcRatioThresh
-						cipConc_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
-						cipConc_ext_igf.(sprlNames{ix})(time,:) = NaN;
-						cipMass_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
-						cipMass_ext_igf.(sprlNames{ix})(time,:) = NaN;
+						cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
+						cipConc_cm4_ext_igf.(sprlNames{ix})(time,:) = NaN;
+						cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
+						cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = NaN;
 						
 						twcRatioExcdIx.(sprlNames{ix}) = [twcRatioExcdIx.(sprlNames{ix}); time]; %Indices of times with potentially poor repr. of extended mass
 						
@@ -356,33 +256,41 @@ for ix = loopVctr
 			
 		end
 		
-
 		% Calculate TWC for extended distribution
-		nanMassIx_hybrid_igf = find(all(isnan(cipMass_hybrid_igf.(sprlNames{ix})),2));
-		nanMassIx_ext_igf = find(all(isnan(cipMass_ext_igf.(sprlNames{ix})),2));
-		cipTWC_hybrid_igf.(sprlNames{ix}) = nansum((cipMass_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		cipTWC_ext_igf.(sprlNames{ix}) = nansum((cipMass_ext_igf.(sprlNames{ix}).*cipExt_binwidth').*1e6,2); % g m-3
-		cipTWC_hybrid_igf.(sprlNames{ix})(nanMassIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN 
-		cipTWC_ext_igf.(sprlNames{ix})(nanMassIx_ext_igf) = NaN;
+		nanMassIx_hybrid_igf = find(all(isnan(cipMass_gcm4_hybrid_igf.(sprlNames{ix})),2));
+		nanMassIx_ext_igf = find(all(isnan(cipMass_gcm4_ext_igf.(sprlNames{ix})),2));
+		cipTWC_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMass_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+		cipTWC_gm3_ext_igf.(sprlNames{ix}) = nansum((cipMass_gcm4_ext_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+		cipTWC_gm3_hybrid_igf.(sprlNames{ix})(nanMassIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
+		cipTWC_gm3_ext_igf.(sprlNames{ix})(nanMassIx_ext_igf) = NaN;
+		
+		nanMassIWCIx_hybrid_igf = find(all(isnan(cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
+		cipIWC_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+		cipIWC_gm3_hybrid_igf.(sprlNames{ix})(nanMassIWCIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
+		
+		nanMassLWCIx_hybrid_igf = find(all(isnan(cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
+		cipLWC_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+		cipLWC_gm3_hybrid_igf.(sprlNames{ix})(nanMassLWCIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
 		
 		% Calculate total number concentration for extended distribution
-		nanConcIx_hybrid_igf = find(all(isnan(cipConc_hybrid_igf.(sprlNames{ix})),2));
-		nanConcIx_ext_igf = find(all(isnan(cipConc_ext_igf.(sprlNames{ix})),2));
-		cipNt_hybrid_igf.(sprlNames{ix}) = nansum(cipConc_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		cipNt_ext_igf.(sprlNames{ix}) = nansum(cipConc_ext_igf.(sprlNames{ix}).*cipExt_binwidth',2); % cm-3
-		cipNt_hybrid_igf.(sprlNames{ix})(nanConcIx_hybrid_igf) = NaN; % Set times with NaN in all contributing concentration bins to NaN
-		cipNt_ext_igf.(sprlNames{ix})(nanConcIx_ext_igf) = NaN;
+		nanConcIx_hybrid_igf = find(all(isnan(cipConc_cm4_hybrid_igf.(sprlNames{ix})),2));
+		nanConcIx_ext_igf = find(all(isnan(cipConc_cm4_ext_igf.(sprlNames{ix})),2));
+		cipNt_cm3_hybrid_igf.(sprlNames{ix}) = nansum(cipConc_cm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm',2); % cm-3
+		cipNt_cm3_ext_igf.(sprlNames{ix}) = nansum(cipConc_cm4_ext_igf.(sprlNames{ix}).*cipExt_binwidth_cm',2); % cm-3
+		cipNt_cm3_hybrid_igf.(sprlNames{ix})(nanConcIx_hybrid_igf) = NaN; % Set times with NaN in all contributing concentration bins to NaN
+		cipNt_cm3_ext_igf.(sprlNames{ix})(nanConcIx_ext_igf) = NaN;
 		
 		% Calculate median mass diameter
-		cipDmm_hybrid_igf.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth',cipTWC_hybrid_igf.(sprlNames{ix})./1e6); % cm
-		cipDmm_ext_igf.(sprlNames{ix}) = calc_mmd(cipExt_binMid,cipMass_ext_igf.(sprlNames{ix}).*cipExt_binwidth',cipTWC_ext_igf.(sprlNames{ix})./1e6);
-		cipDmm_hybrid_igf.(sprlNames{ix})(nanMassIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
-		cipDmm_ext_igf.(sprlNames{ix})(nanMassIx_ext_igf) = NaN;
+		cipDmm_mm_hybrid_igf.(sprlNames{ix}) = (calc_mmd(cipExt_binMid_cm,cipMass_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm',cipTWC_gm3_hybrid_igf.(sprlNames{ix})./1e6)).*10; % mm
+		cipDmm_mm_ext_igf.(sprlNames{ix}) = (calc_mmd(cipExt_binMid_cm,cipMass_gcm4_ext_igf.(sprlNames{ix}).*cipExt_binwidth_cm',cipTWC_gm3_ext_igf.(sprlNames{ix})./1e6)).*10;
+		cipDmm_mm_hybrid_igf.(sprlNames{ix})(nanMassIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
+		cipDmm_mm_ext_igf.(sprlNames{ix})(nanMassIx_ext_igf) = NaN;
+		
 		
 		totalSkip = length(fitSkipIx.(sprlNames{ix}))+length(lowLmdaIx.(sprlNames{ix}));
 		fitSkipRatio.(sprlNames{ix}) = totalSkip/time;
 		fprintf('\t***Fitting skipped %d/%d times (%.3f%%) due to insufficient data\n',length(fitSkipIx.(sprlNames{ix})),...
-			time,(length(fitSkipIx.(sprlNames{ix}))/time)*100)	
+			time,(length(fitSkipIx.(sprlNames{ix}))/time)*100)
 		fprintf('\t***Lambda < %.1f %d/%d times (%.3f%%)\n',lmdaThresh,length(lowLmdaIx.(sprlNames{ix})),time,...
 			(length(lowLmdaIx.(sprlNames{ix}))/time)*100)
 		fprintf('\t***TWC ratio exceeded %d/%d times (%.3f%%)\n',...
@@ -390,14 +298,19 @@ for ix = loopVctr
 		fprintf('\t***Total number discarded: %d (%.3f%%)\n',...
 			totalSkip,fitSkipRatio.(sprlNames{ix})*100)
 	end
+	
+	
+	if saveMat
+		clearvars cipConc_cm4 cipMassIWC_gcm4 cipMassLWC_gcm4 cipMassTWC_gcm4...
+			cipObsConc_cm4 cipObsMassIWC_gcm4 cipObsMassLWC_gcm4 cipObsMassTWC_gcm4 cipTWC_extOnly...
+			cipTWC_obsOnly diaryF iceFlg ix lmda_tmp loopVctr mu_tmp...
+			n0_tmp nanMassLWCIx_hybrid_igf nanMassIx_hybrid_igf nanMassIx_ext_igf nanMassIWCIx_hybrid_igf...
+			nanConcIx_hybrid_igf nanConcIx_ext_igf sprlLen sprlMeanAspctR_lw time totalSkip
+		
+		save([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat'],'-regexp',...
+			'^(?!dataPath$|fileIdStr$|iFlt$|initialVars$|chkTWCratio$|saveMat$|flights$|extnd12mm$|extnd55mm$|statStr$)\w');
+	end
+	
+	diary off
+	clearvars('-except',initialVars{:});
 end
-
-if saveMat
-	clearvars('chkTWCratio', 'cipConc', 'cipConcSprl', 'cipDataF', 'cipMass', 'cipMassSprl', 'cipObsConc', 'cipObsMass',... 
-		'cipTWC_extOnly', 'cipTWC_obsOnly', 'doEvryTStp', 'doSprl', 'doTempBins', 'ii', 'ix', 'iz',...
-		'lmda_tmp', 'mu_tmp', 'n0_tmp','saveMat', 'sprlUp', 'tempBins', 'tempC_sprlOrig', 'time', 'tmp',...
-		'nanConcIx_ext_igf','nanConcIx_hybrid_igf','nanMassIx_ext_igf','nanMassIx_hybrid_igf','loopVctr','totalSkip','iceFlg');
-	save([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat'],'-regexp','^(?!dataPath$|fileIdStr$)\w');
-end
-
-diary off

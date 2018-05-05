@@ -26,12 +26,26 @@ mlTopTemp = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mlTopTemp');
 sprlZone = nc_varget([dataPath '/' flight '_PECANparams.nc'],'sprlZone');
 mcsType = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsType');
 
+%% Remove ML from select variables
+sprlNames = fieldnames(twc_gm3_avg);
+for ix = 1:length(sprlNames)
+	twc_gm3_avg_mlr.(sprlNames{ix}) = twc_gm3_avg.(sprlNames{ix});
+	Dmm_twc_mm_avg_mlr.(sprlNames{ix}) = Dmm_twc_mm_avg.(sprlNames{ix});
+	efct_rad_um_avg_mlr.(sprlNames{ix}) = efct_rad_um_avg.(sprlNames{ix});
+	if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+		mlIXs = find(tempC_avg.(sprlNames{ix}) <= mlBotTemp(ix) & tempC_avg.(sprlNames{ix}) >= mlTopTemp(ix));
+		twc_gm3_avg_mlr.(sprlNames{ix})(mlIXs) = NaN;
+		Dmm_twc_mm_avg_mlr.(sprlNames{ix})(mlIXs) = NaN;
+		efct_rad_um_avg_mlr.(sprlNames{ix})(mlIXs) = NaN;
+	end
+end
+
 
 
 ncRoot.Name = '/';
 ncRoot.Format = 'netcdf4';
 ncRoot.Dimensions(1).Name = 'obsBins';
-ncRoot.Dimensions(1).Length = length(bin_min);
+ncRoot.Dimensions(1).Length = length(bin_min_mm);
 ncRoot.Dimensions(2).Name = 'spirals';
 ncRoot.Dimensions(2).Length = length(startT);
 ncRoot.Attributes(1).Name = 'flight';
@@ -252,25 +266,59 @@ for ix = 1:length(sprlNames)
 	eval(['nc' sprlNames{ix} '.Variables(17).Datatype = ''double'';']);
 	eval(['nc' sprlNames{ix} '.Variables(17).FillValue = NaN;']);
 	
+	%% ML Removed TWC
+	twcA10mlr(1).Name = 'Units';
+	twcA10mlr(1).Value = 'g m-3';
+	twcA10mlr(2).Name = 'Description';
+	twcA10mlr(2).Value = 'Total water content - Melt Layer Data Removed';
+	eval(['nc' sprlNames{ix} '.Variables(18).Name = ''cipTWC_mlr'';']);
+	eval(['nc' sprlNames{ix} '.Variables(18).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+	eval(['nc' sprlNames{ix} '.Variables(18).Attributes = twcA10mlr;']);
+	eval(['nc' sprlNames{ix} '.Variables(18).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(18).FillValue = NaN;']);
+	%% ML Removed Dmm
+	dmmA10mlr(1).Name = 'Units';
+	dmmA10mlr(1).Value = 'mm';
+	dmmA10mlr(2).Name = 'Description';
+	dmmA10mlr(2).Value = 'Median mass diameter - Melt Layer Data Removed';
+	eval(['nc' sprlNames{ix} '.Variables(19).Name = ''cipDmm_mlr'';']);
+	eval(['nc' sprlNames{ix} '.Variables(19).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+	eval(['nc' sprlNames{ix} '.Variables(19).Attributes = dmmA10mlr;']);
+	eval(['nc' sprlNames{ix} '.Variables(19).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(19).FillValue = NaN;']);
+	%% ML Removed Effective Radius
+	erA10mlr(1).Name = 'Units';
+	erA10mlr(1).Value = 'um';
+	erA10mlr(2).Name = 'Description';
+	erA10mlr(2).Value = 'Effective radius - 10 sec average - Melt Layer Data Removed';
+	eval(['nc' sprlNames{ix} '.Variables(20).Name = ''efctvRadius_10s_mlr'';']);
+	eval(['nc' sprlNames{ix} '.Variables(20).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+	eval(['nc' sprlNames{ix} '.Variables(20).Attributes = erA10mlr;']);
+	eval(['nc' sprlNames{ix} '.Variables(20).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(20).FillValue = NaN;']);
 	
+	%% Apply metadata and write out data to file
 	eval(['ncwriteschema(outfile, nc' sprlNames{ix} ');']);
 	
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTsec_1s'',time_secs_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTsec_10s'',time_secs_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/flTsec_1s'',time_secsFL_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/flTsec_10s'',time_secsFL_avg.(sprlNames{ix}));']);
-	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipNt'',n_avg.(sprlNames{ix}));']);
-	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWC'',twc_avg.(sprlNames{ix}));']);
-	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipDmm'',Dmm_twc_avg.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipNt'',n_cm3_avg.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWC'',twc_gm3_avg.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipDmm'',Dmm_twc_mm_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/tempC_1s'',tempC_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/tempC_10s'',tempC_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/rh_1s'',RH_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/rh_10s'',RH_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/areaRatio_1s'',area_ratio_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/areaRatio_10s'',area_ratio_avg.(sprlNames{ix}));']);
-	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_1s'',efct_rad_orig.(sprlNames{ix}));']);
-	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_10s'',efct_rad_avg.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_1s'',efct_rad_um_orig.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_10s'',efct_rad_um_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/meanAreaRatio_1s'',permute(mean_areaRatio_orig.(sprlNames{ix}),[2 1]));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/meanAreaRatio_10s'',permute(mean_areaRatio_avg.(sprlNames{ix}),[2 1]));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWC_mlr'',twc_gm3_avg_mlr.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipDmm_mlr'',Dmm_twc_mm_avg_mlr.(sprlNames{ix}));']);
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_10s_mlr'',efct_rad_um_avg_mlr.(sprlNames{ix}));']);
 	
 end
