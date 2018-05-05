@@ -2,16 +2,19 @@ clearvars; close all;
 
 %% Specify various plotting/calculation parameters
 flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
-% flights = {'20150706'};
+% flights = {'20150709'};
 
 avgTime = 10;
 
 zoom = 0;
 
-contLevs = 64;
+contLevs = 70;
+logCont = 1;
 
-fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_1.2cm'];
-% fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_5cm'];
+rmvMLmass = 1;
+
+fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_12mm'];
+% fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_55mm'];
 titleIdStr = '';
 if zoom
 	fNameAppnd = '_zoom';
@@ -23,25 +26,26 @@ end
 getLims = 0; % If true, run without plotting and print values to assist in setting axis limits
 
 plotND				= 1;
-plotNDall			= 1;
-plotNDtemp			= 1;
-plotNDtempBinned	= 1;
+plotNDallOne		= 1;
+plotNDall			= 0;
+plotNDtemp			= 0;
+plotNDtempBinned	= 0;
 
-plotMD				= 0;
+plotMD				= 1;
+plotMDallOne		= 1;
 plotMDall			= 0;
 plotMDtemp			= 0;
 plotMDtempBinned	= 0;
 
-plotARatTemp        = 0;
-
+plotTempIWC_LWC		= 0;
 plotTWCextndRatio	= 0;
+
 plotMDratioExcd		= 0; % Plot indvdl M(D) for periods where mass ratio between obs and extended is exceeded
 plotNDratioExcd		= 0; % Plot indvdl N(D) for periods where mass ratio between obs and extended is exceeded
-
+plotARatTemp        = 0;
 
 % Plots using all spirals over all flights
 plotARsprls  = 0;
-plotTWCsprls = 0;
 
 
 if zoom
@@ -67,7 +71,6 @@ end
 
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
-% load('/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/Code/PECAN-MP-Analysis/utilities/HomeyerRainbowCmap.mat');
 
 
 % Initialize variables to be analyzed over all flights/spirals
@@ -75,12 +78,6 @@ cipAR_sprlAvgs = NaN(42,34); % 42 spirals, with 34 diameter bins each
 
 iSprl = 1; % Counter for total number of spirals (used in whole-project variable concat)
 
-
-%% Create figure handles for any multi-flight figs
-if plotTWCsprls
-	twcSfig = figure('Position', [10,10,1500,1000]);
-	twcColors = varycolor(42);
-end
 
 for iFlt = 1:length(flights)
 	flight = flights{iFlt};
@@ -97,7 +94,7 @@ for iFlt = 1:length(flights)
 	load([dataPath 'mp-data/' flight '/sDist/' flight fileIdStr '.mat']);
 
 	%% Create directories to save plots in if they don't already exist
-	if saveFigs
+	if saveFigs && ~getLims
 		%%% Save info and directory operations for CIP Fit plots
 		saveDir = [savePath flight '/CIP-Ext'];
 		if (exist(saveDir, 'dir') ~= 7)
@@ -107,14 +104,20 @@ for iFlt = 1:length(flights)
 		if (plotND && exist([saveDir '/CIP-ND-avg_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-ND-avg_' num2str(avgTime) 's'])
 		end
-		if (plotNDall && exist([saveDir '/CIP-ND_' num2str(avgTime) 's'], 'dir') ~= 7)
+		if (plotNDallOne && exist([saveDir '/CIP-ND_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-ND_' num2str(avgTime) 's'])
+		end
+		if (plotNDall && exist([saveDir '/CIP-ND-All_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDir '/CIP-ND-All_' num2str(avgTime) 's'])
 		end
 		if (plotMD && exist([saveDir '/CIP-MD-avg_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-MD-avg_' num2str(avgTime) 's'])
 		end
-		if (plotMDall && exist([saveDir '/CIP-MD_' num2str(avgTime) 's'], 'dir') ~= 7)
+		if (plotMDallOne && exist([saveDir '/CIP-MD_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-MD_' num2str(avgTime) 's'])
+		end
+		if (plotMDall && exist([saveDir '/CIP-MD-All_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDir '/CIP-MD-All_' num2str(avgTime) 's'])
 		end
 		if (plotNDtemp && exist([saveDir '/CIP-ND-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-ND-Temp_' num2str(avgTime) 's'])
@@ -140,6 +143,9 @@ for iFlt = 1:length(flights)
 		if (plotARatTemp && exist([saveDir '/CIP-ARat-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDir '/CIP-ARat-Temp_' num2str(avgTime) 's'])
 		end
+		if (plotTempIWC_LWC && exist([saveDir '/CIP-IWC-LWC-Temp_' num2str(avgTime) 's'], 'dir') ~= 7)
+			mkdir([saveDir '/CIP-IWC-LWC-Temp_' num2str(avgTime) 's'])
+		end
 		
 		%%% Save info and directory operations for multi-flight plots
 		saveDirObs = savePath;
@@ -150,9 +156,6 @@ for iFlt = 1:length(flights)
 		if (plotARsprls && exist([saveDirObs '/CIP-AR-Sprls_' num2str(avgTime) 's'], 'dir') ~= 7)
 			mkdir([saveDirObs '/CIP-AR-Sprls_' num2str(avgTime) 's'])
 		end
-		if (plotTWCsprls && exist([saveDirObs '/CIP-TWC-Sprls_' num2str(avgTime) 's'], 'dir') ~= 7)
-			mkdir([savePath '/CIP-TWC-Sprls_' num2str(avgTime) 's'])
-		end
 	end
 
 	%%% Save a list of variables we want to keep across all iterations
@@ -162,20 +165,26 @@ for iFlt = 1:length(flights)
 	end
 	
 	loopVctr = 1:length(sprlNames);
-% 	loopVctr = [7];
+% 	loopVctr = [16];
 
 	%% Specify flight-specific plotting parameters
 	tempRangeAll = [-18.5 22];
 
 	if zoom
-		NDLim = [1e-4 10];
-		MDLim = [1e-8 5e-5];
-	else
-		NDLim = [1e-6 20];
+		NDLim = [1e-7 30];
+		NDavgLim = [3e-4 5];
 		MDLim = [1e-10 5e-5];
+		MDavgLim = [1e-9 1e-5];
+	else
+		NDLim = [1e-11 30];
+		NDavgLim = [1e-6 5];
+		MDLim = [1e-13 5e-5];
+		MDavgLim = [1e-9 1e-5];
 	end
-	NDLogLim = [-4 2];
-	MDLogLim = [-8 -4];
+	NDLogCLim = [-5 2];
+	NDLogLim = [-7 2];
+	MDLogCLim = [-8 -4];
+	MDLogLim = [-10 -4];
 	ARlim = [0.25 0.85];
 
 	
@@ -265,63 +274,84 @@ for iFlt = 1:length(flights)
 
 	%% Standard plots
 	if plotND
+		if getLims
+			maxConc = [];
+			minConc = [];
+		end
 		for ix = loopVctr
-
-			cipConc = nanmean(cipConc_hybrid_igf.(sprlNames{ix}),1);
-
-			if saveFigs && noDisp
-				figure('visible','off','Position', [10,10,1200,700]);
+			
+			cipConc = nanmean(cipConc_cm4_hybrid_igf.(sprlNames{ix}),1);
+			
+			if getLims
+				if zoom
+					tmpMean = cipConc(:,1:37);%1:37 gives us 0-2.6mm bins
+					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+				else
+					tmpMean = cipConc(:,1:53);%1:53 gives us 0-5.8mm bins
+					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
+					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
+				end
 			else
-				figure('Position', [10,10,1200,700]);
-			end
-
-			stairs(cipExt_binMin(1:length(cip_binMin))*10, cipConc(1:length(cip_binMin))', 'Color',[0 0 0.3], 'LineWidth', 2);
-			hold on
-			stairs(cipExt_binMin(length(cip_binMin):end)*10, cipConc(length(cip_binMin):end)','b', 'LineWidth', 2);
-
-			title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
-
-			xlabel('D (mm)');
-			ylabel('N(D) (cm^{-4})');
-			set(gca,'Yscale','log');
-			set(gca,'Xscale','log');
-			if ~isempty(diamLim)
-				xlim(diamLim);
-			end
-			if ~isempty(NDLim)
-				ylim(NDLim);
-			end
-			set(gca,'XMinorTick','on','YMinorTick','on');
-			set(findall(gcf,'-property','FontSize'),'FontSize',28)
-			grid
-
-
-			if saveFigs
-				tightfig(gcf);
-				set(gcf,'Units','Inches');
-				pos = get(gcf,'Position');
-				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-ND-avg_' num2str(avgTime) 's/' flight '_CIP_ND_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,700]);
+				else
+					figure('Position', [10,10,1200,700]);
+				end
+				
+				stairs(cipExt_binMin_mm(1:numObs_bins), cipConc(1:numObs_bins)', 'Color',[0 0 0.3], 'LineWidth', 2);
+				hold on
+				stairs(cipExt_binMin_mm(numObs_bins:end), cipConc(numObs_bins:end)','b', 'LineWidth', 2);
+				
+				title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
+				
+				xlabel('D (mm)');
+				ylabel('N(D) (cm^{-4})');
+				set(gca,'Yscale','log');
+				set(gca,'Xscale','log');
+				if ~isempty(diamLim)
+					xlim(diamLim);
+				end
+				if ~isempty(NDavgLim)
+					ylim(NDavgLim);
+				end
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28)
+				grid
+				
+				
+				if saveFigs
+					tightfig(gcf);
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print(sprintf('%s/CIP-ND-avg_%ds/%s_CIP_ND_%ds_S%02d%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
+				end
 			end
 		end
+		if getLims
+			fprintf('minConc = %.2e\n',nanmin(minConc))
+			fprintf('mean_minConc = %.2e\n',nanmean(minConc))
+			fprintf('maxConc = %.2g\n',nanmax(maxConc))
+		end
 	end
-	if plotNDall
+	if plotNDallOne
 		if getLims
 			maxConc = [];
 			minConc = [];
 		end
 		for ix = loopVctr
 
-			cipConc = cipConc_hybrid_igf.(sprlNames{ix});
+			cipConc = cipConc_cm4_hybrid_igf.(sprlNames{ix});
 
 			colors = varycolor(size(cipConc,1));
 			if getLims
 				if zoom
-					tmpMean = nanmean(cipConc(:,1:37),1);%1:37 gives us 0-2.6mm bins
+					tmpMean = cipConc(:,1:37);%1:37 gives us 0-2.6mm bins
 					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
 					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
 				else
-					tmpMean = nanmean(cipConc(:,1:53),1);%1:53 gives us 0-5.8mm bins
+					tmpMean = cipConc(:,1:53);%1:53 gives us 0-5.8mm bins
 					maxConc = [maxConc; nanmax(tmpMean(tmpMean>0))];
 					minConc = [minConc; nanmin(tmpMean(tmpMean>0))];
 				end
@@ -335,8 +365,8 @@ for iFlt = 1:length(flights)
 				hold on
 
 				for icx=1:size(cipConc,1)
-					stairs(cipExt_binMin(1:length(cip_binMin))*10, cipConc(icx,1:length(cip_binMin))','Color',colors(icx,:), 'LineWidth', 2,'DisplayName',num2str(icx));
-					stairs(cipExt_binMin(length(cip_binMin):end)*10, cipConc(icx,length(cip_binMin):end)','Color',colors(icx,:), 'LineWidth', 0.5,'DisplayName',[num2str(icx) 'ext']);
+					stairs(cipExt_binMin_mm(1:numObs_bins), cipConc(icx,1:numObs_bins)','Color',colors(icx,:), 'LineWidth', 2,'DisplayName',num2str(icx));
+					stairs(cipExt_binMin_mm(numObs_bins:end), cipConc(icx,numObs_bins:end)','Color',colors(icx,:), 'LineWidth', 0.5,'DisplayName',[num2str(icx) 'ext']);
 				end
 				title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
 
@@ -364,7 +394,7 @@ for iFlt = 1:length(flights)
 					set(gcf,'Units','Inches');
 					pos = get(gcf,'Position');
 					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-					print([saveDir '/CIP-ND_' num2str(avgTime) 's/' flight '_CIP_ND_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
+					print(sprintf('%s/CIP-ND_%ds/%s_CIP_ND_%ds_S%02d_all%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
 				end
 			end
 		end
@@ -374,13 +404,61 @@ for iFlt = 1:length(flights)
 			fprintf('maxConc = %.2g\n',nanmax(maxConc))
 		end
 	end
+	if plotNDall
+		for ix = loopVctr
+			cipConc = cipConc_cm4_hybrid_igf.(sprlNames{ix});
+			cipConc_fit = cipConc_cm4_ext_igf.(sprlNames{ix});
+			cipTime = sDistF.time_secs_avg.(sprlNames{ix});
+			tempC = sDistF.tempC_avg.(sprlNames{ix});
+			
+			for iPsd = 1:size(cipConc,1)
+				psdTime = datestr(cipTime(iPsd)/3600/24,'HH:MM:SS');
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,700]);
+				else
+					figure('Position', [10,10,1200,700]);
+				end
+				
+				stairs(cipExt_binMin_mm(1:numObs_bins), cipConc(iPsd,1:numObs_bins)', 'b', 'LineWidth', 2);
+				hold on
+				stairs(cipExt_binMin_mm(numObs_bins:end), cipConc(iPsd,numObs_bins:end)','r', 'LineWidth', 2);
+				plot(cipExt_binMid_mm, cipConc_fit(iPsd,:)','k','LineWidth', 2);
+
+				title(sprintf('%s - Spiral %d - %s UTC |  %.1f%cC  | #%d - CIP (Extended)',flight,ix,psdTime,tempC(iPsd),char(176),iPsd));
+				
+				xlabel('D (mm)');
+				ylabel('N(D) (cm^{-4})');
+				set(gca,'Yscale','log');
+				set(gca,'Xscale','log');
+				if ~isempty(diamLim)
+					xlim(diamLim);
+				end
+				if ~isempty(NDLim)
+					ylim(NDLim);
+				end
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28)
+				grid
+				
+				
+				if saveFigs
+					tightfig(gcf);
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print(sprintf('%s/CIP-ND-All_%ds/%s_CIP_ND_S%02d_%02d%s',saveDir,avgTime,flight,ix,iPsd,fNameAppnd),Ftype,Fres)
+				end
+			end
+		end
+	end
 	if plotNDtemp
 		if any(isinf(diamLim)) || isempty(diamLim)
-			diamLim = [min(cipExt_binMid*10) max(cipExt_binMid*10)];
+			diamLim = [min(cipExt_binMid_mm) max(cipExt_binMid_mm)];
 		end
 		for ix = loopVctr
 
-			cipConc = cipConc_hybrid_igf.(sprlNames{ix});
+			cipConc = cipConc_cm4_hybrid_igf.(sprlNames{ix});
+			cipConc(cipConc == 0) = NaN;
 
 			tempCsprl = sDistF.tempC_orig.(sprlNames{ix});
 			time_fl = sDistF.time_secsFL_orig.(sprlNames{ix});
@@ -402,7 +480,9 @@ for iFlt = 1:length(flights)
 
 			yyaxis left
 			ax = gca;
-			contourf(cipExt_binMid*10,time_secs/24/3600,log10(cipConc),linspace(NDLogLim(1),NDLogLim(2),contLevs),'LineColor','none');
+			contourf(cipExt_binMid_mm,time_secs/24/3600,log10(cipConc),linspace(NDLogLim(1),NDLogLim(2),contLevs),'LineColor','none');
+% 			h = pcolor(cipExt_binMid_mm,time_secs/24/3600,log10(cipConc));
+% 			set(h,'EdgeColor','none')
 			xlabel('D (mm)');
 			ylabel('Time');
 			set(ax,'XMinorTick','on');
@@ -410,17 +490,27 @@ for iFlt = 1:length(flights)
 			c=colorbar;
 			set(c,'Location','southoutside');
 			ylabel(c,'log_{10}N(D) (cm^{-4})');
-			set(ax, 'CLim', NDLogLim);
+			set(ax, 'CLim', NDLogCLim);
+			
+			if logCont
+				set(ax,'XScale','log');
+				labLocFac = 0.83;
+				scaleStr = '_log';
+				diamLim = [0.15 diamLim(2)];
+			else
+				labLocFac = 0.95;
+				scaleStr = '';
+			end
 			set(ax,'XLim',diamLim);
 
 			% Plot ML top/bottom locations and annotate with temp
+			topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+			botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
 			hold on
 			plot(diamLim, [1 1]*mlTopTime(ix)/24/3600,'k--')
-			topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
-			tMT = text(diamLim(2)*0.95,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+			tMT = text(diamLim(2)*labLocFac,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
 			plot(diamLim, [1 1]*mlBotTime(ix)/24/3600,'k--')
-			botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
-			tMB = text(diamLim(2)*0.95,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+			tMB = text(diamLim(2)*labLocFac,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
 			hold off
 
 			% Swap time direction depending on spiral direction and define top/bottom spiral temps
@@ -489,12 +579,13 @@ for iFlt = 1:length(flights)
 			set(findall(gcf,'-property','FontSize'),'FontSize',26)
 			set(tMB,'FontSize',14);
 			set(tMT,'FontSize',14);
+			set(gca,'layer','top'); % Puts tick marks and such on top of the pcolor
 
 			if saveFigs
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-ND-Temp_' num2str(avgTime) 's/' flight '_CIP_ND-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],'-dpng',Fres)
+				print(sprintf('%s/CIP-ND-Temp_%ds/%s_CIP_ND-Temp_%ds_S%02d%s%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd,scaleStr),'-dpng',Fres)
 			end
 		end
 	end
@@ -505,7 +596,7 @@ for iFlt = 1:length(flights)
 		end
 		for ix = loopVctr
 
-			cipConcSprl = cipConc_hybrid_igf.(sprlNames{ix});
+			cipConcSprl = cipConc_cm4_hybrid_igf.(sprlNames{ix});
 
 			tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
 
@@ -543,9 +634,9 @@ for iFlt = 1:length(flights)
 						figure('Position', [10,10,1500,1000]);
 					end
 
-					stairs(cipExt_binMin(1:length(cip_binMin))*10, nanmean(cipConc(:,1:length(cip_binMin)),1)', 'Color',[0 0 0.3], 'LineWidth', 2);
+					stairs(cipExt_binMin_mm(1:numObs_bins), nanmean(cipConc(:,1:numObs_bins),1)', 'Color',[0 0 0.3], 'LineWidth', 2);
 					hold on
-					stairs(cipExt_binMin(length(cip_binMin):end)*10, nanmean(cipConc(:,length(cip_binMin):end),1)','b', 'LineWidth', 2);
+					stairs(cipExt_binMin_mm(numObs_bins:end), nanmean(cipConc(:,numObs_bins:end),1)','b', 'LineWidth', 2);
 
 					title(sprintf('%s - Spiral %d - CIP (Extended) - %d%cC avg',flight,ix,tempBins(iii),char(176)));
 
@@ -568,7 +659,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-TempB_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
+						print(sprintf('%s/CIP-ND-TempBinned/%s_CIP_ND-TempB_S%02d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
@@ -581,76 +672,116 @@ for iFlt = 1:length(flights)
 	end
 	
 	if plotMD
-		for ix = loopVctr
-
-			meanMass = nanmean(cipMass_hybrid_igf.(sprlNames{ix}),1);
-
-			if saveFigs && noDisp
-				figure('visible','off','Position', [10,10,1200,700]);
-			else
-				figure('Position', [10,10,1200,700]);
-			end
-			set(gcf,'defaultAxesColorOrder',[[0 0 0]; [0 0 0]]);
-
-			yyaxis left
-			stairs(cipExt_binMin(1:length(cip_binMin))*10, meanMass(1:length(cip_binMin))', 'Color',[0 0 0.3], 'LineWidth', 2);
-			hold on
-			stairs(cipExt_binMin(length(cip_binMin):end)*10, meanMass(length(cip_binMin):end)','b-', 'LineWidth', 2);
-
-			title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
-
-			xlabel('D (mm)');
-			ylabel('M(D) (g cm^{-4})');
-			set(gca,'Yscale','log');
-			set(gca,'Xscale','log');
-			if ~isempty(diamLim)
-				xlim(diamLim);
-			end
-			if ~isempty(MDLim)
-				ylim(MDLim);
-			end
-			set(gca,'XMinorTick','on','YMinorTick','on');
-			set(findall(gcf,'-property','FontSize'),'FontSize',28)
-			grid;
-
-			massCDF = zeros(size(meanMass));
-			sumMeanMass = nansum(meanMass);
-			for ii=1:length(meanMass)
-				massCDF(ii) = nansum(meanMass(1:ii))/sumMeanMass;
-			end
-
-			yyaxis right
-			plot(cipExt_binMin(1:length(cip_binMin))*10,massCDF(1:length(cip_binMin))*100,'Color',[0.3 0 0],'LineWidth',2);
-			hold on
-			plot(cipExt_binMin(length(cip_binMin):end)*10,massCDF(length(cip_binMin):end)*100,'r-','LineWidth',2);
-			ylabel('M(D) CDF (%)');
-
-
-			if saveFigs
-				tightfig(gcf);
-				set(gcf,'Units','Inches');
-				pos = get(gcf,'Position');
-				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-MD-avg_' num2str(avgTime) 's/' flight '_CIP_MD_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],Ftype,Fres)
-			end
-		end
-	end
-	if plotMDall
 		if getLims
 			maxMass = [];
 			minMass = [];
 		end
 		for ix = loopVctr
-			cipMass = cipMass_hybrid_igf.(sprlNames{ix});
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			
+			% Set any mass values in the ML to NaN
+			if rmvMLmass
+				tempC = sDistF.tempC_avg.(sprlNames{ix});
+				if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+					mlIXs = find(tempC <= mlBotTemp(ix) & tempC >= mlTopTemp(ix));
+					cipMass(mlIXs,:) = NaN;
+				end
+			end
+			
+			meanMass = nanmean(cipMass,1);
+			
+			if getLims
+				if zoom
+					tmpMean = meanMass(:,1:37);%1:37 gives us 0-2.6mm bins
+					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+				else
+					tmpMean = meanMass(:,1:53);%1:53 gives us 0-5.8mm bins
+					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
+					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
+				end
+			else
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,700]);
+				else
+					figure('Position', [10,10,1200,700]);
+				end
+				set(gcf,'defaultAxesColorOrder',[[0 0 0]; [0 0 0]]);
+				
+				yyaxis left
+				stairs(cipExt_binMin_mm(1:numObs_bins), meanMass(1:numObs_bins)', 'Color',[0 0 0.3], 'LineWidth', 2);
+				hold on
+				stairs(cipExt_binMin_mm(numObs_bins:end), meanMass(numObs_bins:end)','b-', 'LineWidth', 2);
+				
+				title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
+				
+				xlabel('D (mm)');
+				ylabel('M(D) (g cm^{-4})');
+				set(gca,'Yscale','log');
+				set(gca,'Xscale','log');
+				if ~isempty(diamLim)
+					xlim(diamLim);
+				end
+				if ~isempty(MDavgLim)
+					ylim(MDavgLim);
+				end
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28)
+				grid;
+				
+				massCDF = zeros(size(meanMass));
+				sumMeanMass = nansum(meanMass);
+				for ii=1:length(meanMass)
+					massCDF(ii) = nansum(meanMass(1:ii))/sumMeanMass;
+				end
+				
+				yyaxis right
+				plot(cipExt_binMin_mm(1:numObs_bins),massCDF(1:numObs_bins)*100,'Color',[0.3 0 0],'LineWidth',2);
+				hold on
+				plot(cipExt_binMin_mm(numObs_bins:end),massCDF(numObs_bins:end)*100,'r-','LineWidth',2);
+				ylabel('M(D) CDF (%)');
+				
+				
+				if saveFigs
+					tightfig(gcf);
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print(sprintf('%s/CIP-MD-avg_%ds/%s_CIP_MD_%ds_S%02d%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
+				end
+			end
+		end
+		if getLims
+			fprintf('minMass = %.2e\n',nanmin(minMass))
+			fprintf('mean_minMass = %.2e\n',nanmean(minMass))
+			fprintf('maxMass = %.2g\n',nanmax(maxMass))
+		end
+	end
+	if plotMDallOne
+		if getLims
+			maxMass = [];
+			minMass = [];
+		end
+		for ix = loopVctr
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			
+			% Set any mass values in the ML to NaN
+			if rmvMLmass
+				tempC = sDistF.tempC_avg.(sprlNames{ix});
+				if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+					mlIXs = find(tempC <= mlBotTemp(ix) & tempC >= mlTopTemp(ix));
+					cipMass(mlIXs,:) = NaN;
+				end
+			end
 
 			colors = varycolor(size(cipMass,1));
 			if getLims
 				if zoom
-					tmpMean = nanmean(cipMass(:,1:37),1);%1:37 gives us 0-2.6mm bins
+					tmpMean = cipMass(:,1:37);%1:37 gives us 0-2.6mm bins
 					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
 					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
 				else
-					tmpMean = nanmean(cipMass(:,1:53),1);%1:53 gives us 0-5.8mm bins
+					tmpMean = cipMass(:,1:53);%1:53 gives us 0-5.8mm bins
 					maxMass = [maxMass; nanmax(tmpMean(tmpMean>0))];
 					minMass = [minMass; nanmin(tmpMean(tmpMean>0))];
 				end
@@ -664,8 +795,8 @@ for iFlt = 1:length(flights)
 				hold on
 
 				for icx=1:size(cipMass,1)
-					stairs(cipExt_binMin(1:length(cip_binMin))*10, cipMass(icx,1:length(cip_binMin))','Color',colors(icx,:), 'LineWidth', 2,'DisplayName',num2str(icx));
-					stairs(cipExt_binMin(length(cip_binMin):end)*10, cipMass(icx,length(cip_binMin):end)','Color',colors(icx,:), 'LineWidth', 0.5,'DisplayName',[num2str(icx) 'ext']);
+					stairs(cipExt_binMin_mm(1:numObs_bins), cipMass(icx,1:numObs_bins)','Color',colors(icx,:), 'LineWidth', 2,'DisplayName',num2str(icx));
+					stairs(cipExt_binMin_mm(numObs_bins:end), cipMass(icx,numObs_bins:end)','Color',colors(icx,:), 'LineWidth', 0.5,'DisplayName',[num2str(icx) 'ext']);
 				end
 				title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
 
@@ -693,7 +824,7 @@ for iFlt = 1:length(flights)
 					set(gcf,'Units','Inches');
 					pos = get(gcf,'Position');
 					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-					print([saveDir '/CIP-MD_' num2str(avgTime) 's/' flight '_CIP_MD_' num2str(avgTime) 's_S' num2str(ix) '_all' fNameAppnd],Ftype,Fres)
+					print(sprintf('%s/CIP-MD_%ds/%s_CIP_MD_%ds_S%02d_all%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
 				end
 			end
 		end
@@ -703,23 +834,85 @@ for iFlt = 1:length(flights)
 			fprintf('maxMass = %.2g\n',nanmax(maxMass))
 		end
 	end
+	if plotMDall
+		for ix = loopVctr
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			cipMass_fit = cipMass_gcm4_ext_igf.(sprlNames{ix});
+			cipTime = sDistF.time_secs_avg.(sprlNames{ix});
+			tempC = sDistF.tempC_avg.(sprlNames{ix});
+			
+			% Set any mass values in the ML to NaN
+			if rmvMLmass
+				if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+					mlIXs = find(tempC <= mlBotTemp(ix) & tempC >= mlTopTemp(ix));
+					cipMass(mlIXs,:) = NaN;
+					cipMass_fit(mlIXs,:) = NaN;
+				end
+			end
+			
+			for iPsd = 1:size(cipMass,1)
+				if all(isnan(cipMass(iPsd,:)))
+					continue
+				end
+				psdTime = datestr(cipTime(iPsd)/3600/24,'HH:MM:SS');
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1200,700]);
+				else
+					figure('Position', [10,10,1200,700]);
+				end
+				
+				stairs(cipExt_binMin_mm(1:numObs_bins), cipMass(iPsd,1:numObs_bins)', 'b', 'LineWidth', 2);
+				hold on
+				stairs(cipExt_binMin_mm(numObs_bins:end), cipMass(iPsd,numObs_bins:end)','r', 'LineWidth', 2);
+				plot(cipExt_binMid_mm, cipMass_fit(iPsd,:)','k','LineWidth', 2);
+
+				title(sprintf('%s - Spiral %d - %s UTC |  %.1f%cC  | #%d - CIP (Extended)',flight,ix,psdTime,tempC(iPsd),char(176),iPsd));
+				
+				xlabel('D (mm)');
+				ylabel('M(D) (g cm^{-4})');
+				set(gca,'Yscale','log');
+				set(gca,'Xscale','log');
+				if ~isempty(diamLim)
+					xlim(diamLim);
+				end
+				if ~isempty(MDLim)
+					ylim(MDLim);
+				end
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28)
+				grid
+				
+				
+				if saveFigs
+					tightfig(gcf);
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print(sprintf('%s/CIP-MD-All_%ds/%s_CIP_MD_S%02d_%02d%s',saveDir,avgTime,flight,ix,iPsd,fNameAppnd),Ftype,Fres)
+				end
+			end
+		end
+	end
 	if plotMDtemp
 		if any(isinf(diamLim)) || isempty(diamLim)
-			diamLim = [min(cipExt_binMid*10) max(cipExt_binMid*10)];
+			diamLim = [min(cipExt_binMid_mm) max(cipExt_binMid_mm)];
 		end
 		for ix = loopVctr
-
-			mass_twc = cipMass_hybrid_igf.(sprlNames{ix});
-
-			tempCsprl = sDistF.tempC_orig.(sprlNames{ix});
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			cipMass(cipMass == 0) = NaN;
+			time_secs = sDistF.time_secs_avg.(sprlNames{ix});
+			
+			tempC = sDistF.tempC_orig.(sprlNames{ix});
 			time_fl = sDistF.time_secsFL_orig.(sprlNames{ix});
 
-			if avgTime == 1
-				time_secs = sDistF.time_secs_orig.(sprlNames{ix});	
-			else
-				time_secs = sDistF.time_secs_avg.(sprlNames{ix});	
+			% Set any mass values in the ML to NaN
+			if rmvMLmass
+				if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+					tempCavg = sDistF.tempC_avg.(sprlNames{ix});
+					mlIXs = find(tempCavg <= mlBotTemp(ix) & tempCavg >= mlTopTemp(ix));
+					cipMass(mlIXs,:) = NaN;
+				end
 			end
-
 
 			if saveFigs && noDisp
 				figure('visible','off','Position', [10,10,1500,1000]);
@@ -731,7 +924,9 @@ for iFlt = 1:length(flights)
 
 			yyaxis left
 			ax = gca;
-			contourf(cipExt_binMid*10,time_secs/24/3600,log10(mass_twc),linspace(MDLogLim(1),MDLogLim(2),contLevs),'LineColor','none');
+			contourf(cipExt_binMid_mm,time_secs/24/3600,log10(cipMass),linspace(MDLogLim(1),MDLogLim(2),contLevs),'LineColor','none');
+% 			h = pcolor(cipExt_binMid_mm,time_secs/24/3600,log10(mass_twc));
+% 			set(h,'EdgeColor','none')
 			xlabel('D (mm)');
 			ylabel('Time');
 			set(ax,'XMinorTick','on');
@@ -739,27 +934,36 @@ for iFlt = 1:length(flights)
 			c=colorbar;
 			set(c,'Location','southoutside');
 			ylabel(c,'log_{10}M(D) (g cm^{-4})');
-			set(ax, 'CLim', MDLogLim);
+			set(ax, 'CLim', MDLogCLim);
+			if logCont
+				set(ax,'XScale','log');
+				labLocFac = 0.83;
+				scaleStr = '_log';
+				diamLim = [0.15 diamLim(2)];
+			else
+				labLocFac = 0.95;
+				scaleStr = '';
+			end
 			set(ax,'XLim',diamLim);
 
 			% Plot ML top/bottom locations and annotate with temp
+			topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+			botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
 			hold on
 			plot(diamLim, [1 1]*mlTopTime(ix)/24/3600,'k--')
-			topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
-			tMT = text(diamLim(2)*0.95,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+			tMT = text(diamLim(2)*labLocFac,mlTopTime(ix)/24/3600,topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
 			plot(diamLim, [1 1]*mlBotTime(ix)/24/3600,'k--')
-			botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
-			tMB = text(diamLim(2)*0.95,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+			tMB = text(diamLim(2)*labLocFac,mlBotTime(ix)/24/3600,botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
 			hold off
 
 			% Swap time direction depending on spiral direction and define top/bottom spiral temps
-			if tempCsprl(1) < tempCsprl(end)
+			if tempC(1) < tempC(end)
 				set(ax,'YDir','reverse');
-				topT = floor(tempCsprl(1));
-				botT = ceil(tempCsprl(end));
+				topT = floor(tempC(1));
+				botT = ceil(tempC(end));
 			else
-				topT = floor(tempCsprl(end));
-				botT = ceil(tempCsprl(1));
+				topT = floor(tempC(end));
+				botT = ceil(tempC(1));
 			end
 
 			% Set the tick frequency for the time axis and adjust plot accordingly
@@ -785,16 +989,16 @@ for iFlt = 1:length(flights)
 			yLbl = cell(size(yTemp));
 			for iT = 1:length(yTemp)
 				yLbl{iT} = num2str(yTemp(iT));
-				[tmpMin,index(iT)] = min(abs(tempCsprl-yTemp(iT)));
+				[tmpMin,index(iT)] = min(abs(tempC-yTemp(iT)));
 				% fprintf('Deviation from desired %.1f: %.2f\n',yTemp(iT),tmpMin);
-				if (index(iT) == 1 ||  index(iT) == length(tempCsprl) || tmpMin > 0.3 )
+				if (index(iT) == 1 ||  index(iT) == length(tempC) || tmpMin > 0.3 )
 					index(iT) = NaN;
 				end
 			end
 			indexFinal = index(~isnan(index));
 			time_fl_s = time_fl/24/3600;
 
-			if(tempCsprl(1) < tempCsprl(end))
+			if(tempC(1) < tempC(end))
 
 				plot(dummyX,time_fl_s,'Color','w');
 				yLblFinal = flip(yLbl(~isnan(index)));
@@ -818,12 +1022,13 @@ for iFlt = 1:length(flights)
 			set(findall(gcf,'-property','FontSize'),'FontSize',26)
 			set(tMB,'FontSize',14);
 			set(tMT,'FontSize',14);
+			set(gca,'layer','top'); % Puts tick marks and such on top of the pcolor
 
 			if saveFigs
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-MD-Temp_' num2str(avgTime) 's/' flight '_CIP_MD-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],'-dpng',Fres)
+				print(sprintf('%s/CIP-MD-Temp_%ds/%s_CIP_MD-Temp_%ds_S%02d%s%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd,scaleStr),'-dpng',Fres)
 			end
 		end
 	end
@@ -833,17 +1038,23 @@ for iFlt = 1:length(flights)
 			minMass = [];
 		end
 		for ix = loopVctr
+			cipMassSprl = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			tempC = sDistF.tempC_avg.(sprlNames{ix});
 
-			cipMassSprl = cipMass_hybrid_igf.(sprlNames{ix});
-
-			tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
-
-			tempCrnd = NaN(length(tempCsprl),1);
-			for ii=1:length(tempCsprl)
-				if tempCsprl(ii) < 0
-					tempCrnd(ii) = ceil(tempCsprl(ii));
-				elseif tempCsprl(ii) > 0
-					tempCrnd(ii) = floor(tempCsprl(ii));
+			% Set any mass values in the ML to NaN
+			if rmvMLmass
+				if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
+					mlIXs = find(tempC <= mlBotTemp(ix) & tempC >= mlTopTemp(ix));
+					cipMassSprl(mlIXs,:) = NaN;
+				end
+			end
+			
+			tempCrnd = NaN(length(tempC),1);
+			for ii=1:length(tempC)
+				if tempC(ii) < 0
+					tempCrnd(ii) = ceil(tempC(ii));
+				elseif tempC(ii) > 0
+					tempCrnd(ii) = floor(tempC(ii));
 				end
 			end
 
@@ -875,9 +1086,9 @@ for iFlt = 1:length(flights)
 					meanMass = nanmean(cipMass,1);
 
 					yyaxis left
-					stairs(cipExt_binMin(1:length(cip_binMin))*10, meanMass(1:length(cip_binMin))', 'Color',[0 0 0.3], 'LineWidth', 2);
+					stairs(cipExt_binMin_mm(1:numObs_bins), meanMass(1:numObs_bins)', 'Color',[0 0 0.3], 'LineWidth', 2);
 					hold on
-					stairs(cipExt_binMin(length(cip_binMin):end)*10, meanMass(length(cip_binMin):end)', 'b-', 'LineWidth', 2);
+					stairs(cipExt_binMin_mm(numObs_bins:end), meanMass(numObs_bins:end)', 'b-', 'LineWidth', 2);
 
 					title(sprintf('%s - Spiral %d - CIP (Extended) - %d%cC avg',flight,ix,tempBins(iii),char(176)));
 
@@ -902,9 +1113,9 @@ for iFlt = 1:length(flights)
 					end
 
 					yyaxis right
-					plot(cipExt_binMin(1:length(cip_binMin))*10,massCDF(1:length(cip_binMin))*100,'Color',[0.3 0 0],'LineWidth',2);
+					plot(cipExt_binMin_mm(1:numObs_bins),massCDF(1:numObs_bins)*100,'Color',[0.3 0 0],'LineWidth',2);
 					hold on
-					plot(cipExt_binMin(length(cip_binMin):end)*10,massCDF(length(cip_binMin):end)*100,'r-','LineWidth',2);
+					plot(cipExt_binMin_mm(numObs_bins:end),massCDF(numObs_bins:end)*100,'r-','LineWidth',2);
 					ylabel('M(D) CDF (%)');
 
 
@@ -914,7 +1125,7 @@ for iFlt = 1:length(flights)
 						set(gcf,'Units','Inches');
 						pos = get(gcf,'Position');
 						set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-TempB_S%d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
+						print(sprintf('%s/CIP-MD-TempBinned/%s_CIP_MD-TempB_S%02d_%d_%ddegC%s',saveDir,flight,ix,iii,tempBins(iii),fNameAppnd),Ftype,Fres)
 					end
 				end
 			end
@@ -952,14 +1163,16 @@ for iFlt = 1:length(flights)
 
 			yyaxis left
 			ax = gca;
-			contourf(sDistF.bin_mid,time_secs/24/3600,cipARat,linspace(ARlim(1),ARlim(2),contLevs),'LineColor','none');
+			%contourf(cip_binMid_mm,time_secs/24/3600,cipARat,linspace(ARlim(1),ARlim(2),contLevs),'LineColor','none');
+			h = pcolor(cip_binMid_mm',time_secs/24/3600,cipARat);
+			set(h,'EdgeColor','none')
 			xlabel('D (mm)');
 			ylabel('Time');
 			set(ax,'XMinorTick','on');
 			colormap(HomeyerRainbow(contLevs));
 			c=colorbar;
 			set(c,'Location','southoutside');
-			ylabel(c,'log_{10}N(D) (cm^{-4})');
+			ylabel(c,'Area Ratio (%)');
 			set(ax, 'CLim', ARlim);
 			set(ax,'XLim',diamLim);
 
@@ -1044,8 +1257,95 @@ for iFlt = 1:length(flights)
 				set(gcf,'Units','Inches');
 				pos = get(gcf,'Position');
 				set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-				print([saveDir '/CIP-ARat-Temp_' num2str(avgTime) 's/' flight '_CIP_ARat-Temp_' num2str(avgTime) 's_S' num2str(ix) fNameAppnd],'-dpng',Fres)
+				print(sprintf('%s/CIP-ARat-Temp_%ds/%s_CIP_ARat-Temp_%ds_S%02d%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
 			end
+		end
+	end
+	
+	if plotTempIWC_LWC
+		if getLims
+			maxWC = [];
+			minWC = [];
+		end
+		for ix = loopVctr
+			iceFlg = iceFlag.(sprlNames{ix});
+			
+			nanMassIWC_obs = find(all(isnan(cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
+			cipIWC_obs = nansum((cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})(:,1:numObs_bins).*cipExt_binwidth_cm(1:numObs_bins)').*1e6,2); % g m-3
+			cipIWC_obs(nanMassIWC_obs) = NaN; % Set times with NaN in all contributing mass bins to NaN
+			cipIWC_obs(iceFlg == 0) = 0;
+			
+			nanMassIWC_all = find(all(isnan(cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
+			cipIWC_all = nansum((cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+			cipIWC_all(nanMassIWC_all) = NaN; % Set times with NaN in all contributing mass bins to NaN
+			cipIWC_all(iceFlg == 0) = 0;
+			
+			nanMassLWC_obs = find(all(isnan(cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
+			cipLWC_obs = nansum((cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix})(:,1:numObs_bins).*cipExt_binwidth_cm(1:numObs_bins)').*1e6,2); % g m-3
+			cipLWC_obs(nanMassLWC_obs) = NaN; % Set times with NaN in all contributing mass bins to NaN
+			cipLWC_obs(iceFlg == 1) = 0;
+			
+			nanConc = find(all(isnan(cipConc_cm4_hybrid_igf.(sprlNames{ix})),2));
+			cipConc = nansum(cipConc_cm4_hybrid_igf.(sprlNames{ix}),2);
+			cipConc(nanConc) = NaN; % Set times with NaN in all contributing bins to NaN
+			
+			time_secs = sDistF.time_secs_avg.(sprlNames{ix});
+			tempC = sDistF.tempC_avg.(sprlNames{ix});
+			
+			
+			if getLims
+				maxWC = [maxWC; nanmax(cipIWC_obs(cipIWC_obs>0)); nanmax(cipIWC_all(cipIWC_all>0)); nanmax(cipLWC_obs(cipLWC_obs>0))];
+				minWC = [minWC; nanmin(cipIWC_obs(cipIWC_obs>0)); nanmin(cipIWC_all(cipIWC_all>0)); nanmin(cipLWC_obs(cipLWC_obs>0))];
+			else
+				if saveFigs && noDisp
+					figure('visible','off','Position', [10,10,1000,1200]);
+				else
+					figure('Position', [10,10,1000,1200]);
+				end
+				
+				plot(cipLWC_obs,tempC,'r-','LineWidth',2);
+				hold on
+				plot(cipIWC_obs,tempC,'b-','LineWidth',2);
+				plot(cipIWC_all,tempC,'c-','LineWidth',2);
+				% plot(cipConc,tempC,'k-','LineWidth',2);
+				ylabel(sprintf('Temperature (%cC)',char(176)));
+				
+				% Plot ML top/bottom locations and annotate with temp
+				xl = [4e-5 10];
+				xlim(xl);
+				plot(xl, [1 1]*mlTopTemp(ix),'k--')
+				topStr = sprintf('%.3f %cC',mlTopTemp(ix),char(176));
+				tMT = text(xl(2)*0.6,mlTopTemp(ix),topStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+				plot(xl, [1 1]*mlBotTemp(ix),'k--')
+				botStr = sprintf('%.3f %cC',mlBotTemp(ix),char(176));
+				tMB = text(xl(2)*0.6,mlBotTemp(ix),botStr,'HorizontalAlignment','center','BackgroundColor','k','color','w');
+				
+				title([flight ' - Spiral ' num2str(ix) ' - CIP (Extended) (using ' num2str(avgTime) 's Avg PSDs)']);
+				
+				xlabel('Water Content (g m^{-3})');
+				set(gca,'Xscale','log');
+				set(gca,'YDir','reverse');
+				
+				legend('LWC Obs','IWC Obs','IWC Obs+Ext','Location','northwest');
+				set(gca,'XMinorTick','on','YMinorTick','on');
+				set(findall(gcf,'-property','FontSize'),'FontSize',28);
+				set(tMB,'FontSize',14);
+				set(tMT,'FontSize',14);
+				grid;
+				
+				if saveFigs
+					set(gcf,'Units','Inches');
+					pos = get(gcf,'Position');
+					set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
+					print(sprintf('%s/CIP-IWC-LWC-Temp_%ds/%s_CIP-IWC-LWC-Temp_%ds_S%02d%s',saveDir,avgTime,flight,avgTime,ix,fNameAppnd),Ftype,Fres)
+				end
+			end
+			
+		end
+		if getLims
+			fprintf('minWC = %.2e\n',nanmin(minWC))
+			fprintf('mean_minWC = %.2e\n',nanmean(minWC))
+			fprintf('maxWC = %.2g\n',nanmax(maxWC))
 		end
 	end
 	
@@ -1053,7 +1353,7 @@ for iFlt = 1:length(flights)
 	if plotTWCextndRatio
 		for ix = loopVctr
 
-			cipMass = cipMass_hybrid_igf.(sprlNames{ix});
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
 			twcRatioSprl = twcRatio.(sprlNames{ix});
 			twcRexcdSprl = twcRatioExcdIx.(sprlNames{ix});
 
@@ -1104,8 +1404,8 @@ for iFlt = 1:length(flights)
 	if plotMDratioExcd
 		% Plot individual M(D) for all points with extended portion of TWC exceeding threshold of observed TWC
 		for ix = loopVctr
-			cipMass = cipMass_hybrid_igf.(sprlNames{ix});
-			cipMass_fitOnly = cipMass_ext_igf.(sprlNames{ix});
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			cipMass_fitOnly = cipMass_gcm4_ext_igf.(sprlNames{ix});
 			tempCsprl = sDistF.tempC_orig.(sprlNames{ix});
 			twcRatioSprl = twcRatio.(sprlNames{ix});
 % 			twcRexcdSprl = find(twcRatioSprl >= 0.4 & twcRatioSprl <= 9.0);
@@ -1118,24 +1418,24 @@ for iFlt = 1:length(flights)
 					figure('Position', [10,10,1200,700]);
 				end
 				
-				tempMassObs = (cipMass(twcRexcdSprl(irx),1:length(cip_binMin)).*cipExt_binwidth(1:length(cip_binMin))').*1e6; % Convert to g m-3
+				tempMassObs = (cipMass(twcRexcdSprl(irx),1:numObs_bins).*cipExt_binwidth_cm(1:numObs_bins)').*1e6; % Convert to g m-3
 				tempTWCObs = nansum(tempMassObs);
-				tempMassExt = (cipMass(twcRexcdSprl(irx),length(cip_binMin)+1:end).*cipExt_binwidth(length(cip_binMin)+1:end)').*1e6; % Convert to g m-3
+				tempMassExt = (cipMass(twcRexcdSprl(irx),numObs_bins:end).*cipExt_binwidth_cm(numObs_bins:end)').*1e6; % Convert to g m-3
 				tempTWCExt = nansum(tempMassExt);
 				
 				
 				% Determine average difference between the obs and fit
-				tmpFitMass = cipMass_fitOnly(twcRexcdSprl(irx),1:length(cip_binMin));
-				tmpMass = cipMass(twcRexcdSprl(irx),1:length(cip_binMin));
+				tmpFitMass = cipMass_fitOnly(twcRexcdSprl(irx),1:numObs_bins);
+				tmpMass = cipMass(twcRexcdSprl(irx),1:numObs_bins);
 				tmpFitMass(tmpFitMass == 0) = NaN;
 				tmpMass(tmpMass == 0) = NaN;
 				massDiff = nanmean(tmpFitMass - tmpMass);
 				
 				
-				stairs(cipExt_binMin(1:length(cip_binMin))*10, cipMass(twcRexcdSprl(irx),1:length(cip_binMin))','b-','LineWidth', 2);
+				stairs(cipExt_binMin_mm(1:numObs_bins), cipMass(twcRexcdSprl(irx),1:numObs_bins)','b-','LineWidth', 2);
 				hold on
-				stairs(cipExt_binMin(length(cip_binMin)+1:end)*10, cipMass(twcRexcdSprl(irx),length(cip_binMin)+1:end)','r-','LineWidth', 2);
-				plot(cipExt_binMid*10,cipMass_fitOnly(twcRexcdSprl(irx),:)','k--','LineWidth', 2);
+				stairs(cipExt_binMin_mm(numObs_bins:end), cipMass(twcRexcdSprl(irx),numObs_bins:end)','r-','LineWidth', 2);
+				plot(cipExt_binMid_mm,cipMass_fitOnly(twcRexcdSprl(irx),:)','k--','LineWidth', 2);
 				
 				t1 = sprintf('%s - Spiral %d - CIP - TWC_{extnd} = \\color{magenta}%.2f %% \\color{black}of TWC_{obs} - #%d',flight,ix,twcRatioSprl(twcRexcdSprl(irx))*100,twcRexcdSprl(irx));
 				t2 = sprintf('TWC_{obs} = %.4f g m^{-3}  TWC_{extnd} = %.4f g m^{-3}  \\color{blue}\\mu = %.2f  \\lambda = %.2f',...
@@ -1179,10 +1479,10 @@ for iFlt = 1:length(flights)
 	if plotNDratioExcd
 		% Plot individual N(D) for all points with extended portion of TWC exceeding threshold of observed TWC
 		for ix = loopVctr
-			cipMass = cipMass_hybrid_igf.(sprlNames{ix});
-			cipMass_fitOnly = cipMass_ext_igf.(sprlNames{ix});
-			cipConc = cipConc_hybrid_igf.(sprlNames{ix});
-			cipConc_fitOnly = cipConc_ext_igf.(sprlNames{ix});
+			cipMass = cipMass_gcm4_hybrid_igf.(sprlNames{ix});
+			cipMass_fitOnly = cipMass_gcm4_ext_igf.(sprlNames{ix});
+			cipConc = cipConc_cm4_hybrid_igf.(sprlNames{ix});
+			cipConc_fitOnly = cipConc_cm4_ext_igf.(sprlNames{ix});
 			tempCsprl = sDistF.tempC_orig.(sprlNames{ix});
 			twcRatioSprl = twcRatio.(sprlNames{ix});
 % 			twcRexcdSprl = find(twcRatioSprl >= 0.4 & twcRatioSprl <= 9.0);
@@ -1195,24 +1495,24 @@ for iFlt = 1:length(flights)
 					figure('Position', [10,10,1200,700]);
 				end
 				
-				tempMassObs = (cipMass(twcRexcdSprl(irx),1:length(cip_binMin)).*cipExt_binwidth(1:length(cip_binMin))').*1e6; % Convert to g m-3
+				tempMassObs = (cipMass(twcRexcdSprl(irx),1:numObs_bins).*cipExt_binwidth_cm(1:numObs_bins)').*1e6; % Convert to g m-3
 				tempTWCObs = nansum(tempMassObs);
-				tempMassExt = (cipMass(twcRexcdSprl(irx),length(cip_binMin)+1:end).*cipExt_binwidth(length(cip_binMin)+1:end)').*1e6; % Convert to g m-3
+				tempMassExt = (cipMass(twcRexcdSprl(irx),numObs_bins:end).*cipExt_binwidth_cm(numObs_bins:end)').*1e6; % Convert to g m-3
 				tempTWCExt = nansum(tempMassExt);
 				
 				
 				% Determine average difference between the obs and fit
-				tmpFitConc = cipConc_fitOnly(twcRexcdSprl(irx),1:length(cip_binMin));
-				tmpConc = cipConc(twcRexcdSprl(irx),1:length(cip_binMin));
+				tmpFitConc = cipConc_fitOnly(twcRexcdSprl(irx),1:numObs_bins);
+				tmpConc = cipConc(twcRexcdSprl(irx),1:numObs_bins);
 				tmpFitConc(tmpFitConc == 0) = NaN;
 				tmpConc(tmpConc == 0) = NaN;
 				concDiff = nanmean(tmpFitConc - tmpConc);
 				
 				
-				stairs(cipExt_binMin(1:length(cip_binMin))*10, cipConc(twcRexcdSprl(irx),1:length(cip_binMin))','b-','LineWidth', 2);
+				stairs(cipExt_binMin_mm(1:numObs_bins), cipConc(twcRexcdSprl(irx),1:numObs_bins)','b-','LineWidth', 2);
 				hold on
-				stairs(cipExt_binMin(length(cip_binMin)+1:end)*10, cipConc(twcRexcdSprl(irx),length(cip_binMin)+1:end)','r-','LineWidth', 2);
-				plot(cipExt_binMid*10,cipConc_fitOnly(twcRexcdSprl(irx),:)','k--','LineWidth', 2);
+				stairs(cipExt_binMin_mm(numObs_bins:end), cipConc(twcRexcdSprl(irx),numObs_bins:end)','r-','LineWidth', 2);
+				plot(cipExt_binMid_mm,cipConc_fitOnly(twcRexcdSprl(irx),:)','k--','LineWidth', 2);
 				
 				t1 = sprintf('%s - Spiral %d - CIP - TWC_{extnd} = \\color{magenta}%.2f %% \\color{black}of TWC_{obs} - #%d',flight,ix,twcRatioSprl(twcRexcdSprl(irx))*100,twcRexcdSprl(irx));
 				t2 = sprintf('TWC_{obs} = %.4f g m^{-3}  TWC_{extnd} = %.4f g m^{-3}  \\color{blue}\\mu = %.2f  \\lambda = %.2f',...
@@ -1266,44 +1566,9 @@ for iFlt = 1:length(flights)
 			cipAR_sprlAvgs(iSprl,:) = nanmean(sDistF.mean_areaRatio_avg.(sprlNames{ix})(topIx+1:end,:),1);
 		end
 		
-		
-		if plotTWCsprls
-			TWCsprl = cipTWC_hybrid_igf.(sprlNames{ix});
-			tempCsprl = sDistF.tempC_avg.(sprlNames{ix});
-			
-			set(0, 'CurrentFigure', twcSfig);
-			hold on
-			plot(TWCsprl,tempCsprl,'LineWidth',2,'Color',twcColors(iSprl,:));
-			title('PECAN - CIP (Extended) - TWC - All Spirals');
-			
-			
-			ylabel(sprintf('Temperature (%cC)', char(176)));
-			xlabel('TWC (g m^{-3})')
-			if ~isempty(tempRangeAll)
-				ylim(tempRangeAll);
-			end
-			if ~isempty(TWClim)
-				xlim(TWClim);
-			end
-			set(gca,'XMinorTick','on','YMinorTick','on','YDir','reverse','Xscale','log');
-			set(findall(gcf,'-property','FontSize'),'FontSize',28)
-			grid on
-		end
-		
-		
 		iSprl = iSprl+1;
 	end
 	% 	clearvars('-except',initialVars{:});
-end
-
-%% Save any multi-flight plots
-if plotTWCsprls && saveFigs
-	set(0, 'CurrentFigure', twcSfig);
-	tightfig(gcf);
-	set(gcf,'Units','Inches');
-	pos = get(gcf,'Position');
-	set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-	print([saveDir '/CIP-TWC-Sprls_' num2str(avgTime) 's/CIP_TWC-AllSprls_Temp' fNameAppnd],Ftype,Fres)
 end
 
 
@@ -1319,7 +1584,7 @@ if plotARsprls
 	hold on
 		
 	for ix = 1:42
-		plot(cip_binMid*10, cipAR_sprlAvgs(ix,:)*100','Color',colors(ix,:), 'LineWidth', 2);
+		plot(cip_binMid_mm, cipAR_sprlAvgs(ix,:)*100','Color',colors(ix,:), 'LineWidth', 2);
 	end
 	
 	title('PECAN - Mean Area Ratio ($T \le 0^{\circ}C$) - All Spirals','Interpreter','latex');
