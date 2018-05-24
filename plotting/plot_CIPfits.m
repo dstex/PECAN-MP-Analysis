@@ -176,9 +176,9 @@ for iFlt = 1:length(flights)
 		MDLim = [1e-10 5e-5];
 		MDavgLim = [1e-9 1e-5];
 	else
-		NDLim = [1e-11 30];
+		NDLim = [1e-7 30];
 		NDavgLim = [1e-6 5];
-		MDLim = [1e-13 5e-5];
+		MDLim = [1e-10 5e-5];
 		MDavgLim = [1e-9 1e-5];
 	end
 	NDLogCLim = [-5 2];

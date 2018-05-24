@@ -574,7 +574,7 @@ for iFlt = 1:length(flights)
 				end
 				
 				colormap(colors)
-				cbar = colorbar('Ticks',[0 1],'TickLabels',{'First','Last'});
+				cbar = colorbar('Ticks',[0 1],'TickLabels',{'FirstPSD','LastPSD'});
 				
 				set(gca,'XMinorTick','on','YMinorTick','on');
 				set(findall(gcf,'-property','FontSize'),'FontSize',28)
