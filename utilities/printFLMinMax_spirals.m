@@ -1,7 +1,7 @@
 % Used particularly for quickly getting max/min values for spirals
 % to fill in P-3 Spirals spreadsheet
 
-flight = '20150617';
+flight = '20150620';
 
 probe = 'CIP';
 

@@ -1,8 +1,8 @@
 clearvars
 
 %% Specify various plotting/calculation parameters
-flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
-% flights = {'20150709'};
+% flights = {'20150617','20150620','20150701','20150702','20150706','20150709'};
+flights = {'20150709'};
 
 avgTime = 10;
 
@@ -12,7 +12,7 @@ extnd55mm = 0; %55mm
 numValid = 17; % Required number of bins with valid data needed for given SD to be fit
 
 if extnd12mm
-	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_12mm'];
+	fileIdStr = ['_Fit-CIP_' num2str(avgTime) 'secAvg_12mm_wBAMEXmass'];
 	statStr = '12 mm';
 	pip_prtlBinEdges = [2200.0	2400.0	2600.0	2800.0	3000.0	3200.0	3400.0	3600.0	3800.0	4000.0	4200.0	4400.0...
 		4600.0	4800.0	5000.0	5200.0	5500.0	5800.0	6100.0	6400.0	6700.0	7000.0	7300.0 ...
@@ -44,6 +44,24 @@ dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 % BF95 used Dmean and not Dmax as we did for PECAN
 a = 0.00192; % g cm^-b
 b = 1.9;
+
+% m-D relationships used in McFarq 2007 
+% 29 June 2003, Spiral 2
+a_bmx29Jun = 0.01221; % g cm^-b
+b_bmx29Jun = 1.7;
+
+% 3 July 2003, Spiral 1
+a_bmx3Jul = 0.0064; % g cm^-b
+b_bmx3Jul = 2.0;
+
+% 6 July 2003, Spiral 2
+a_bmx6Jul = 0.00579; % g cm^-b
+b_bmx6Jul = 2.1;
+
+
+
+
+
 
 initialVars = who;
 initialVars{end+1} = 'initialVars';
@@ -141,6 +159,9 @@ for iFlt = 1:length(flights)
 		cipConc_cm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins); % Will contain observed CIP data, with IGF values beyond D=2mm
 		cipMass_gcm4_ext_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
 		cipMass_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+        cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+        cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
+        cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
 		cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
 		cipMassLWC_gcm4_hybrid_igf.(sprlNames{ix}) = NaN(sprlLen,numExt_bins);
 		twcRatio.(sprlNames{ix}) = NaN(sprlLen,1);
@@ -202,10 +223,18 @@ for iFlt = 1:length(flights)
 					cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
 						(a.*cipExt_binMid_cm(numObs_bins+1:end).^b)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end));
 					cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = (a.*cipExt_binMid_cm.^b)' .* cipConc_cm4_ext_igf.(sprlNames{ix})(time,:);
+                    
+                    cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = (a_bmx29Jun.*cipExt_binMid_cm.^b_bmx29Jun)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:);
+                    cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = (a_bmx3Jul.*cipExt_binMid_cm.^b_bmx3Jul)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:);
+                    cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = (a_bmx6Jul.*cipExt_binMid_cm.^b_bmx6Jul)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:);
 				else % Below melting layer - assume liquid water spheres
 					cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
 						sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm(numObs_bins+1:end).^3)' .* (cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end)) );
 					cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm.^3)' .* cipConc_cm4_ext_igf.(sprlNames{ix})(time,:) );
+                    
+                    cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm.^3)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:) );
+                    cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm.^3)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:) );
+                    cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = sprlMeanAR_lw.(sprlNames{ix}).*( ((pi/6).*cipExt_binMid_cm.^3)' .* cipConc_cm4_hybrid_igf.(sprlNames{ix})(time,:) );
 				end
 				
 				cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})(time,numObs_bins+1:end) = ...
@@ -239,6 +268,10 @@ for iFlt = 1:length(flights)
 						cipConc_cm4_ext_igf.(sprlNames{ix})(time,:) = NaN;
 						cipMass_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
 						cipMass_gcm4_ext_igf.(sprlNames{ix})(time,:) = NaN;
+                        
+                        cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
+                        cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
+                        cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix})(time,:) = NaN;
 						
 						twcRatioExcdIx.(sprlNames{ix}) = [twcRatioExcdIx.(sprlNames{ix}); time]; %Indices of times with potentially poor repr. of extended mass
 						
@@ -258,12 +291,26 @@ for iFlt = 1:length(flights)
 		
 		% Calculate TWC for extended distribution
 		nanMassIx_hybrid_igf = find(all(isnan(cipMass_gcm4_hybrid_igf.(sprlNames{ix})),2));
-		nanMassIx_ext_igf = find(all(isnan(cipMass_gcm4_ext_igf.(sprlNames{ix})),2));
+        nanMassIx_ext_igf = find(all(isnan(cipMass_gcm4_ext_igf.(sprlNames{ix})),2));
+        
+        nanMassIx_BMX29jun_hybrid_igf = find(all(isnan(cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix})),2));
+        nanMassIx_BMX3jul_hybrid_igf = find(all(isnan(cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix})),2));
+        nanMassIx_BMX6jul_hybrid_igf = find(all(isnan(cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix})),2));
+		
 		cipTWC_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMass_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
 		cipTWC_gm3_ext_igf.(sprlNames{ix}) = nansum((cipMass_gcm4_ext_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+        
+        cipTWCBMX29jun_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassBMX29jun_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+        cipTWCBMX3jul_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassBMX3jul_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+        cipTWCBMX6jul_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassBMX6jul_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
+        
 		cipTWC_gm3_hybrid_igf.(sprlNames{ix})(nanMassIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN
 		cipTWC_gm3_ext_igf.(sprlNames{ix})(nanMassIx_ext_igf) = NaN;
 		
+        cipTWCBMX29jun_gm3_hybrid_igf.(sprlNames{ix})(nanMassIx_BMX29jun_hybrid_igf) = NaN;
+        cipTWCBMX3jul_gm3_hybrid_igf.(sprlNames{ix})(nanMassIx_BMX3jul_hybrid_igf) = NaN;
+        cipTWCBMX6jul_gm3_hybrid_igf.(sprlNames{ix})(nanMassIx_BMX6jul_hybrid_igf) = NaN;
+        
 		nanMassIWCIx_hybrid_igf = find(all(isnan(cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix})),2));
 		cipIWC_gm3_hybrid_igf.(sprlNames{ix}) = nansum((cipMassIWC_gcm4_hybrid_igf.(sprlNames{ix}).*cipExt_binwidth_cm').*1e6,2); % g m-3
 		cipIWC_gm3_hybrid_igf.(sprlNames{ix})(nanMassIWCIx_hybrid_igf) = NaN; % Set times with NaN in all contributing mass bins to NaN

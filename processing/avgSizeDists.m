@@ -3,7 +3,7 @@
 
 clearvars
 
-flight = '20150617';
+flight = '20150620';
 
 probe = 'CIP';
 
@@ -32,31 +32,59 @@ bin_max_mm = nc_varget(sDistFile,'bin_max');
 bin_mid_mm = nc_varget(sDistFile,'bin_mid');
 bin_size_mm = nc_varget(sDistFile,'bin_dD');
 
-conc_minR_cm4_all = (nc_varget(sDistFile,'conc_minR'))'; % cm-4
-area_cm4_all = permute(nc_varget(sDistFile,'area'),[3 2 1]);
-area_calcd_mm2cm4_all = (nc_varget(sDistFile,'Calcd_area'))';
-conc_AreaR_cm4_all = (nc_varget(sDistFile,'conc_AreaR'))';
+% conc_minR_cm4_all = (nc_varget(sDistFile,'conc_minR'))'; % cm-4
+% area_cm4_all = permute(nc_varget(sDistFile,'area'),[3 2 1]);
+% area_calcd_mm2cm4_all = (nc_varget(sDistFile,'Calcd_area'))';
+% conc_AreaR_cm4_all = (nc_varget(sDistFile,'conc_AreaR'))';
+% n_cm3_all = nc_varget(sDistFile,'n');
+% total_area_mm2cm4_all = (nc_varget(sDistFile,'total_area'))';
+% mass_ice_gcm4_all = (nc_varget(sDistFile,'mass_ice'))'; % g cm-4
+% mass_lw_gcm4_all = (nc_varget(sDistFile,'mass_lw'))'; % g cm-4
+% massBL_gcm4_all = (nc_varget(sDistFile,'massBL'))';
+% sd_habit_cm4_all = permute(nc_varget(sDistFile,'habitsd'),[3 2 1]);
+% sdMass_habit_gcm4_all = permute(nc_varget(sDistFile,'habitmsd'),[3 2 1]);
+% efct_rad_um_all = nc_varget(sDistFile,'re');
+% area_ratio_all = nc_varget(sDistFile,'ar');
+% reject_ratio_all = nc_varget(sDistFile,'Reject_ratio');
+% termVeloc_ice_all = (nc_varget(sDistFile,'vt_ice'))';
+% termVeloc_lw_all = (nc_varget(sDistFile,'vt_lw'))';
+% prec_rate_ice_mmhr_all = (nc_varget(sDistFile,'Prec_rate_ice'))';
+% prec_rate_lw_mmhr_all = (nc_varget(sDistFile,'Prec_rate_lw'))';
+% count_all = (nc_varget(sDistFile,'count'))';
+% sampleVol_cm3_all = (nc_varget(sDistFile,'sample_vol'))';
+% 
+% mean_aspectRatio_rect_all = (nc_varget(sDistFile,'mean_aspect_ratio_rectangle'))';
+% mean_aspectRatio_elps_all = (nc_varget(sDistFile,'mean_aspect_ratio_ellipse'))';
+% mean_areaRatio_all = (nc_varget(sDistFile,'mean_area_ratio'))';
+% mean_perim_um_all = (nc_varget(sDistFile,'mean_perimeter'))';
+
+% For some reason different versions of MATLAB handle the dimension order
+% differently on import... Some require the above, others require this:
+conc_minR_cm4_all = nc_varget(sDistFile,'conc_minR'); % cm-4
+area_cm4_all = nc_varget(sDistFile,'area');
+area_calcd_mm2cm4_all = nc_varget(sDistFile,'Calcd_area');
+conc_AreaR_cm4_all = nc_varget(sDistFile,'conc_AreaR');
 n_cm3_all = nc_varget(sDistFile,'n');
-total_area_mm2cm4_all = (nc_varget(sDistFile,'total_area'))';
-mass_ice_gcm4_all = (nc_varget(sDistFile,'mass_ice'))'; % g cm-4
-mass_lw_gcm4_all = (nc_varget(sDistFile,'mass_lw'))'; % g cm-4
-massBL_gcm4_all = (nc_varget(sDistFile,'massBL'))';
-sd_habit_cm4_all = permute(nc_varget(sDistFile,'habitsd'),[3 2 1]);
-sdMass_habit_gcm4_all = permute(nc_varget(sDistFile,'habitmsd'),[3 2 1]);
+total_area_mm2cm4_all = nc_varget(sDistFile,'total_area');
+mass_ice_gcm4_all = nc_varget(sDistFile,'mass_ice'); % g cm-4
+mass_lw_gcm4_all = nc_varget(sDistFile,'mass_lw'); % g cm-4
+massBL_gcm4_all = nc_varget(sDistFile,'massBL');
+sd_habit_cm4_all = nc_varget(sDistFile,'habitsd');
+sdMass_habit_gcm4_all = nc_varget(sDistFile,'habitmsd');
 efct_rad_um_all = nc_varget(sDistFile,'re');
 area_ratio_all = nc_varget(sDistFile,'ar');
 reject_ratio_all = nc_varget(sDistFile,'Reject_ratio');
-termVeloc_ice_all = (nc_varget(sDistFile,'vt_ice'))';
-termVeloc_lw_all = (nc_varget(sDistFile,'vt_lw'))';
-prec_rate_ice_mmhr_all = (nc_varget(sDistFile,'Prec_rate_ice'))';
-prec_rate_lw_mmhr_all = (nc_varget(sDistFile,'Prec_rate_lw'))';
-count_all = (nc_varget(sDistFile,'count'))';
-sampleVol_cm3_all = (nc_varget(sDistFile,'sample_vol'))';
+termVeloc_ice_all = nc_varget(sDistFile,'vt_ice');
+termVeloc_lw_all = nc_varget(sDistFile,'vt_lw');
+prec_rate_ice_mmhr_all = nc_varget(sDistFile,'Prec_rate_ice');
+prec_rate_lw_mmhr_all = nc_varget(sDistFile,'Prec_rate_lw');
+count_all = nc_varget(sDistFile,'count');
+sampleVol_cm3_all = nc_varget(sDistFile,'sample_vol');
 
-mean_aspectRatio_rect_all = (nc_varget(sDistFile,'mean_aspect_ratio_rectangle'))';
-mean_aspectRatio_elps_all = (nc_varget(sDistFile,'mean_aspect_ratio_ellipse'))';
-mean_areaRatio_all = (nc_varget(sDistFile,'mean_area_ratio'))';
-mean_perim_um_all = (nc_varget(sDistFile,'mean_perimeter'))';
+mean_aspectRatio_rect_all = nc_varget(sDistFile,'mean_aspect_ratio_rectangle');
+mean_aspectRatio_elps_all = nc_varget(sDistFile,'mean_aspect_ratio_ellipse');
+mean_areaRatio_all = nc_varget(sDistFile,'mean_area_ratio');
+mean_perim_um_all = nc_varget(sDistFile,'mean_perimeter');
 
 
 time_secs_all = hhmmss2insec(timehhmmss);

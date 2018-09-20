@@ -6,10 +6,10 @@ clearvars; close all;
 savePath = '/Users/danstechman/GoogleDrive/School/Research/PECAN/Microphysics/plots/';
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
-flight = '20150709';
+flight = '20150620';
 
-saveFigs	= 1;
-noDisp		= 1;
+saveFigs	= 0;
+noDisp		= 0;
 Ftype		= '-dpdf';
 % Ftype		= '-dpng';
 
@@ -23,12 +23,12 @@ allSpirals = 1; % Plot every spiral for given flight - otherwise specified spira
 showMarkers = 0; % Plot markers at given (below) locations on line plots
 
 % One plot for each spiral
-plotTempRHAlt		= 1;
+plotTempRHAlt		= 0;
 plotRHTemp			= 0;
 plotTempAlt			= 0;
 plotTempTdAlt		= 0;
 plotTimeTemp		= 0;
-plotTimeAlt			= 0;
+plotTimeAlt			= 1;
 plotTimeRH			= 0;
 
 % Single plots with data from all spirals
@@ -75,6 +75,8 @@ load(fltLvlFile, '-regexp', '^(?!flight$|dataPath$|lat$|lon$)\w');
 %% Determine which spirals to loop over
 if ~allSpirals
 	switch flight
+        case '20150706'
+			loopVctr = [4];
 		case '20150706'
 			loopVctr = [1, 6]; % Spiral numbers to plot
 			if showMarkers

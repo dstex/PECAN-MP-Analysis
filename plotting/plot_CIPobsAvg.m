@@ -28,9 +28,9 @@ plotNDallOne		= 0;
 plotNDtemp			= 0;
 plotNDtempBinned	= 0;
 
-plotMD				= 1;
+plotMD				= 0;
 plotMDallOne		= 1;
-plotMDtemp			= 1;
+plotMDtemp			= 0;
 plotMDtempBinned	= 0;
 
 

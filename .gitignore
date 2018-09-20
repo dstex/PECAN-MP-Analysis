@@ -2,3 +2,11 @@
 __pycache__/
 
 *.m~
+
+\.DS_Store
+
+plotting/\.ipynb_checkpoints/
+
+processing/\.ipynb_checkpoints/
+
+utilities/\.ipynb_checkpoints/

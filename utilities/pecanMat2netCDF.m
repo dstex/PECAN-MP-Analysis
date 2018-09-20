@@ -8,14 +8,23 @@ flight = '20150617';
 
 dataPath = '/Users/danstechman/GoogleDrive/PECAN-Data/';
 
-outfile = [dataPath 'mp-data/' flight '/' flight '_CIPfit-spirals-10s1sAvg.nc'];
+
+bmxComp = 0;
+
+if bmxComp
+    load([dataPath 'mp-data/' flight '/sDist/' flight '_Fit-CIP_10secAvg_12mm_wBAMEXmass.mat'],'-regexp','hybrid_igf|cipExt_|cip_igf_|negLmdaIx|fitSkipIx');
+    outfile = [dataPath 'mp-data/' flight '/' flight '_CIPfit-spirals-10s1sAvg_wBAMEXmass.nc'];
+else
+    load([dataPath 'mp-data/' flight '/sDist/' flight '_Fit-CIP_10secAvg_12mm.mat'],'-regexp','hybrid_igf|cipExt_|cip_igf_|negLmdaIx|fitSkipIx');
+    outfile = [dataPath 'mp-data/' flight '/' flight '_CIPfit-spirals-10s1sAvg.nc'];
+end
 
 if (exist(outfile, 'file') == 2)
 	delete(outfile);
 end
-
-load([dataPath 'mp-data/' flight '/sDist/' flight '_Fit-CIP_10secAvg_12mm.mat'],'-regexp','hybrid_igf|cipExt_|cip_igf_|negLmdaIx|fitSkipIx');
+   
 load([dataPath 'mp-data/' flight '/sDist/sdistCI.' flight '.CIP.10secAvg.mat'],'-regexp','_orig|_avg|bin_');
+
 
 
 startT = nc_varget([dataPath '/' flight '_PECANparams.nc'],'startT');
@@ -30,12 +39,28 @@ mcsType = nc_varget([dataPath '/' flight '_PECANparams.nc'],'mcsType');
 %% Remove ML from select variables
 sprlNames = fieldnames(cipTWC_gm3_hybrid_igf);
 for ix = 1:length(sprlNames)
+    cipLmda_10s.(sprlNames{ix}) = cip_igf_nml.(sprlNames{ix})(:,3);
 	cipTWC_gm3_hybrid_igf_mlr.(sprlNames{ix}) = cipTWC_gm3_hybrid_igf.(sprlNames{ix});
+    if bmxComp
+        cipTWCBMX29jun_gm3_hybrid_igf_mlr.(sprlNames{ix}) = cipTWCBMX29jun_gm3_hybrid_igf.(sprlNames{ix});
+        cipTWCBMX3jul_gm3_hybrid_igf_mlr.(sprlNames{ix}) = cipTWCBMX3jul_gm3_hybrid_igf.(sprlNames{ix});
+        cipTWCBMX6jul_gm3_hybrid_igf_mlr.(sprlNames{ix}) = cipTWCBMX6jul_gm3_hybrid_igf.(sprlNames{ix});
+    end
 	cipDmm_mm_hybrid_igf_mlr.(sprlNames{ix}) = cipDmm_mm_hybrid_igf.(sprlNames{ix});
 	efct_rad_um_avg_mlr.(sprlNames{ix}) = efct_rad_um_avg.(sprlNames{ix});
+    
+    
+    tempC_60s.(sprlNames{ix}) = arrayfun(@(i) nanmean(tempC_avg.(sprlNames{ix})(i:i+6-1)),1:6:length(tempC_avg.(sprlNames{ix}))-6+1)';
+    cipLmda_60s.(sprlNames{ix}) = arrayfun(@(i) nanmean(cipLmda_10s.(sprlNames{ix})(i:i+6-1)),1:6:length(cipLmda_10s.(sprlNames{ix}))-6+1)';
+    
 	if ~isnan(mlTopTemp(ix)) && ~isnan(mlBotTemp(ix))
 		mlIXs = find(tempC_avg.(sprlNames{ix}) <= mlBotTemp(ix) & tempC_avg.(sprlNames{ix}) >= mlTopTemp(ix));
 		cipTWC_gm3_hybrid_igf_mlr.(sprlNames{ix})(mlIXs) = NaN;
+        if bmxComp
+            cipTWCBMX29jun_gm3_hybrid_igf_mlr.(sprlNames{ix})(mlIXs) = NaN;
+            cipTWCBMX3jul_gm3_hybrid_igf_mlr.(sprlNames{ix})(mlIXs) = NaN;
+            cipTWCBMX6jul_gm3_hybrid_igf_mlr.(sprlNames{ix})(mlIXs) = NaN;
+        end
 		cipDmm_mm_hybrid_igf_mlr.(sprlNames{ix})(mlIXs) = NaN;
 		efct_rad_um_avg_mlr.(sprlNames{ix})(mlIXs) = NaN;
 	end
@@ -57,7 +82,7 @@ ncRoot.Attributes(1).Name = 'flight';
 ncRoot.Attributes(1).Value = flight;
 
 zoneA(1).Name = 'Units';
-zoneA(1).Value = 'T = Transition Zone; S = Stratiform Region; A = Rear Anvil; U = Unclassified';
+zoneA(1).Value = 'T = Transition Zone; S = Enhanced Stratiform Region; A = Anvil Region; X = N/A';
 zoneA(2).Name = 'Description';
 zoneA(2).Value = 'Location of spiral relative to MCS structure';
 ncRoot.Variables(1).Name = 'sprlZone';
@@ -66,7 +91,7 @@ ncRoot.Variables(1).Attributes = zoneA;
 ncRoot.Variables(1).Datatype = 'char';
 
 mTypeA(1).Name = 'Units';
-mTypeA(1).Value = 'F=Trailing Stratiform (Formative),M=Trailing Stratiform (Mature),L=Leading Stratiform,P=Parallel Stratiform,C=Cluster MCS';
+mTypeA(1).Value = 'T=Trailing Stratiform,,L=Leading Stratiform,P=Parallel Stratiform,C=Cluster MCS,F=Post-Frontal';
 mTypeA(2).Name = 'Description';
 mTypeA(2).Value = 'General MCS system type at time of each spiral';
 ncRoot.Variables(2).Name = 'mcsType';
@@ -91,8 +116,12 @@ for ix = 1:length(sprlNames)
 	eval(['nc' sprlNames{ix} '.Dimensions(2).Length = ' num2str(length(time_secs_avg.(sprlNames{ix}))) ';']);
 	eval(['nc' sprlNames{ix} '.Dimensions(3).Name = ''flTsec_1s'';']);
 	eval(['nc' sprlNames{ix} '.Dimensions(3).Length = ' num2str(length(time_secsFL_orig.(sprlNames{ix}))) ';']);
-	eval(['nc' sprlNames{ix} '.Dimensions(4).Name = ''flTsec_10s'';']);
+	eval(['nc' sprlNames{ix} '.Dimensions(4).Name = ''flTemp_10s'';']);
 	eval(['nc' sprlNames{ix} '.Dimensions(4).Length = ' num2str(length(time_secsFL_avg.(sprlNames{ix}))) ';']);
+    eval(['nc' sprlNames{ix} '.Dimensions(5).Name = ''tempC_60s'';']);
+	eval(['nc' sprlNames{ix} '.Dimensions(5).Length = ' num2str(length(tempC_60s.(sprlNames{ix}))) ';']);
+    eval(['nc' sprlNames{ix} '.Dimensions(6).Name = ''cipLmda_60s'';']);
+	eval(['nc' sprlNames{ix} '.Dimensions(6).Length = ' num2str(length(cipLmda_60s.(sprlNames{ix}))) ';']);
 	
 	%% CIP Time
 	timeA1(1).Name = 'Units';
@@ -363,6 +392,39 @@ for ix = 1:length(sprlNames)
 	eval(['nc' sprlNames{ix} '.Variables(26).Attributes = twcA10mlr;']);
 	eval(['nc' sprlNames{ix} '.Variables(26).Datatype = ''double'';']);
 	eval(['nc' sprlNames{ix} '.Variables(26).FillValue = NaN;']);
+    
+    if bmxComp
+        %% ML Removed BAMEX 29 June spiral 2 TWC
+        twcA10B1mlr(1).Name = 'Units';
+        twcA10B1mlr(1).Value = 'g m-3';
+        twcA10B1mlr(2).Name = 'Description';
+        twcA10B1mlr(2).Value = 'Total water content using BAMEX 29 Jun sprl2 m-D relat. - CIP obs + IGF fit - Melt Layer Data Removed';
+        eval(['nc' sprlNames{ix} '.Variables(32).Name = ''cipTWCBMX29jun_hybrid_igf_mlr'';']);
+        eval(['nc' sprlNames{ix} '.Variables(32).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+        eval(['nc' sprlNames{ix} '.Variables(32).Attributes = twcA10B1mlr;']);
+        eval(['nc' sprlNames{ix} '.Variables(32).Datatype = ''double'';']);
+        eval(['nc' sprlNames{ix} '.Variables(32).FillValue = NaN;']);
+        %% ML Removed BAMEX 3 July spiral 1 TWC
+        twcA10B2mlr(1).Name = 'Units';
+        twcA10B2mlr(1).Value = 'g m-3';
+        twcA10B2mlr(2).Name = 'Description';
+        twcA10B2mlr(2).Value = 'Total water content using BAMEX 3 Jul sprl1 m-D relat. - CIP obs + IGF fit - Melt Layer Data Removed';
+        eval(['nc' sprlNames{ix} '.Variables(33).Name = ''cipTWCBMX3jul_hybrid_igf_mlr'';']);
+        eval(['nc' sprlNames{ix} '.Variables(33).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+        eval(['nc' sprlNames{ix} '.Variables(33).Attributes = twcA10B2mlr;']);
+        eval(['nc' sprlNames{ix} '.Variables(33).Datatype = ''double'';']);
+        eval(['nc' sprlNames{ix} '.Variables(33).FillValue = NaN;']);
+        %% ML Removed BAMEX 6 July spiral 2 TWC
+        twcA10B3mlr(1).Name = 'Units';
+        twcA10B3mlr(1).Value = 'g m-3';
+        twcA10B3mlr(2).Name = 'Description';
+        twcA10B3mlr(2).Value = 'Total water content using BAMEX 6 Jul sprl2 m-D relat. - CIP obs + IGF fit - Melt Layer Data Removed';
+        eval(['nc' sprlNames{ix} '.Variables(34).Name = ''cipTWCBMX6jul_hybrid_igf_mlr'';']);
+        eval(['nc' sprlNames{ix} '.Variables(34).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+        eval(['nc' sprlNames{ix} '.Variables(34).Attributes = twcA10B3mlr;']);
+        eval(['nc' sprlNames{ix} '.Variables(34).Datatype = ''double'';']);
+        eval(['nc' sprlNames{ix} '.Variables(34).FillValue = NaN;']);
+    end
 	%% ML Removed Dmm
 	dmmA10mlr(1).Name = 'Units';
 	dmmA10mlr(1).Value = 'mm';
@@ -383,6 +445,40 @@ for ix = 1:length(sprlNames)
 	eval(['nc' sprlNames{ix} '.Variables(28).Attributes = erA10mlr;']);
 	eval(['nc' sprlNames{ix} '.Variables(28).Datatype = ''double'';']);
 	eval(['nc' sprlNames{ix} '.Variables(28).FillValue = NaN;']);
+    
+    
+    %% Temperature 60 sec Avg
+	tempA60(1).Name = 'Units';
+	tempA60(1).Value = 'deg C';
+	tempA60(2).Name = 'Description';
+	tempA60(2).Value = 'Flight-level temperature (w/Zipser wetting corr) - 60 sec average';
+	eval(['nc' sprlNames{ix} '.Variables(29).Name = ''tempC_60s'';']);
+	eval(['nc' sprlNames{ix} '.Variables(29).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(5);']);
+	eval(['nc' sprlNames{ix} '.Variables(29).Attributes = tempA60;']);
+	eval(['nc' sprlNames{ix} '.Variables(29).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(29).FillValue = NaN;']);
+    
+    %% Lambda 60 sec Avg
+	lmdaA60(1).Name = 'Units';
+	lmdaA60(1).Value = 'cm-1';
+	lmdaA60(2).Name = 'Description';
+	lmdaA60(2).Value = 'IGF Lambda - 60 sec average';
+	eval(['nc' sprlNames{ix} '.Variables(30).Name = ''cipLmda_60s'';']);
+	eval(['nc' sprlNames{ix} '.Variables(30).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(6);']);
+	eval(['nc' sprlNames{ix} '.Variables(30).Attributes = lmdaA60;']);
+	eval(['nc' sprlNames{ix} '.Variables(30).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(30).FillValue = NaN;']);
+    
+    %% Lambda 10 sec Avg
+	lmdaA10(1).Name = 'Units';
+	lmdaA10(1).Value = 'cm-1';
+	lmdaA10(2).Name = 'Description';
+	lmdaA10(2).Value = 'IGF Lambda - 10 sec average';
+	eval(['nc' sprlNames{ix} '.Variables(31).Name = ''cipLmda_10s'';']);
+	eval(['nc' sprlNames{ix} '.Variables(31).Dimensions(1) = nc' sprlNames{ix} '.Dimensions(2);']);
+	eval(['nc' sprlNames{ix} '.Variables(31).Attributes = lmdaA10;']);
+	eval(['nc' sprlNames{ix} '.Variables(31).Datatype = ''double'';']);
+	eval(['nc' sprlNames{ix} '.Variables(31).FillValue = NaN;']);
 	
 	%% Apply metadata and write out data to file
 	eval(['ncwriteschema(outfile, nc' sprlNames{ix} ');']);
@@ -413,7 +509,14 @@ for ix = 1:length(sprlNames)
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/rjctRatio_1s'',reject_ratio_orig.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/rjctRatio_10s'',reject_ratio_avg.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWC_hybrid_igf_mlr'',cipTWC_gm3_hybrid_igf_mlr.(sprlNames{ix}));']);
+    if bmxComp
+        eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWCBMX29jun_hybrid_igf_mlr'',cipTWCBMX29jun_gm3_hybrid_igf_mlr.(sprlNames{ix}));']);
+        eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWCBMX3jul_hybrid_igf_mlr'',cipTWCBMX3jul_gm3_hybrid_igf_mlr.(sprlNames{ix}));']);
+        eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipTWCBMX6jul_hybrid_igf_mlr'',cipTWCBMX6jul_gm3_hybrid_igf_mlr.(sprlNames{ix}));']);
+    end
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipDmm_hybrid_igf_mlr'',cipDmm_mm_hybrid_igf_mlr.(sprlNames{ix}));']);
 	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/efctvRadius_10s_mlr'',efct_rad_um_avg_mlr.(sprlNames{ix}));']);
-	
+	eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipLmda_10s'',cipLmda_10s.(sprlNames{ix}));']);
+    eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/cipLmda_60s'',cipLmda_60s.(sprlNames{ix}));']);
+    eval(['ncwrite(outfile, ''/spiral_' num2str(ix) '/tempC_60s'',tempC_60s.(sprlNames{ix}));']);
 end

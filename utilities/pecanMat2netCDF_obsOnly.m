@@ -52,7 +52,7 @@ ncRoot.Attributes(1).Name = 'flight';
 ncRoot.Attributes(1).Value = flight;
 
 zoneA(1).Name = 'Units';
-zoneA(1).Value = 'T = Transition Zone; S = Stratiform Region; A = Rear Anvil; U = Unclassified';
+zoneA(1).Value = 'T = Transition Zone; S = Enhanced Stratiform Region; A = Anvil Region; X = N/A';
 zoneA(2).Name = 'Description';
 zoneA(2).Value = 'Location of spiral relative to MCS structure';
 ncRoot.Variables(1).Name = 'sprlZone';
@@ -61,7 +61,7 @@ ncRoot.Variables(1).Attributes = zoneA;
 ncRoot.Variables(1).Datatype = 'char';
 
 mTypeA(1).Name = 'Units';
-mTypeA(1).Value = 'F=Trailing Stratiform (Formative),M=Trailing Stratiform (Mature),L=Leading Stratiform,P=Parallel Stratiform,C=Cluster MCS';
+mTypeA(1).Value = 'T=Trailing Stratiform,,L=Leading Stratiform,P=Parallel Stratiform,C=Cluster MCS,F=Post-Frontal';
 mTypeA(2).Name = 'Description';
 mTypeA(2).Value = 'General MCS system type at time of each spiral';
 ncRoot.Variables(2).Name = 'mcsType';
